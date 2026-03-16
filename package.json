@@ -10,13 +10,17 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1009.0",
+    "@tanstack/react-query": "^5.90.21",
     "@types/three": "^0.183.1",
+    "@use-glyph/sdk-react": "^2.0.16",
     "framer-motion": "^12.36.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "three": "^0.183.2"
+    "three": "^0.183.2",
+    "viem": "^2.47.4",
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

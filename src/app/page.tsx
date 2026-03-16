@@ -6,9 +6,18 @@ import { CodeEditor } from "@/components/CodeEditor";
 import { ScenePreview } from "@/components/ScenePreview";
 import { GalleryPanel } from "@/components/GalleryPanel";
 import { WorldChat } from "@/components/WorldChat";
+import { WalletButton } from "@/components/WalletButton";
 import { generateMML, DEMO_MML } from "@/lib/ai";
 import type { Message } from "@/lib/ai";
 import { AlertCircle, Sun, Moon, Sunset } from "lucide-react";
+
+let useGlyph: () => { user?: { evmWallet?: { address?: string } }; authenticated?: boolean };
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  useGlyph = require("@use-glyph/sdk-react").useGlyph;
+} catch {
+  useGlyph = () => ({});
+}
 
 type LightingPreset = "studio" | "sunset" | "night";
 
@@ -27,11 +36,16 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lighting, setLighting] = useState<LightingPreset>("studio");
-  const [userId, setUserId] = useState<string>("");
+  const [localUserId, setLocalUserId] = useState<string>("");
 
-  // Load or create persistent user ID from localStorage
+  // Try to get Glyph wallet address; fall back to localStorage UUID
+  const glyphData = useGlyph();
+  const walletAddress = glyphData?.authenticated ? glyphData?.user?.evmWallet?.address : undefined;
+  const userId = walletAddress || localUserId;
+
+  // Load or create persistent user ID from localStorage (fallback when no wallet)
   useEffect(() => {
-    setUserId(generateUserId());
+    setLocalUserId(generateUserId());
   }, []);
 
   const handleGenerate = async (messages: Message[], apiKey: string, endpoint: string, model: string) => {
@@ -73,9 +87,12 @@ export default function Home() {
             VIBEKODA <span className="text-purple-400">STUDIO</span>
           </h1>
         </div>
-        <div className="text-xs text-gray-500 font-mono flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          AGENT_MODE: ACTIVE
+        <div className="flex items-center gap-3">
+          <WalletButton />
+          <div className="text-xs text-gray-500 font-mono flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            AGENT_MODE: ACTIVE
+          </div>
         </div>
       </header>
 
