@@ -1,21 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChatInterface } from "@/components/ChatInterface";
 import { CodeEditor } from "@/components/CodeEditor";
 import { ScenePreview } from "@/components/ScenePreview";
+import { GalleryPanel } from "@/components/GalleryPanel";
+import { WorldChat } from "@/components/WorldChat";
 import { generateMML, DEMO_MML } from "@/lib/ai";
 import type { Message } from "@/lib/ai";
 import { AlertCircle, Sun, Moon, Sunset } from "lucide-react";
-import { WorldChat } from "@/components/WorldChat";
 
 type LightingPreset = "studio" | "sunset" | "night";
+
+function generateUserId(): string {
+  const key = "vibekoda_user_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
 
 export default function Home() {
   const [mmlCode, setMmlCode] = useState<string>(DEMO_MML);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lighting, setLighting] = useState<LightingPreset>("studio");
+  const [userId, setUserId] = useState<string>("");
+
+  // Load or create persistent user ID from localStorage
+  useEffect(() => {
+    setUserId(generateUserId());
+  }, []);
 
   const handleGenerate = async (messages: Message[], apiKey: string, endpoint: string, model: string) => {
     setIsGenerating(true);
@@ -23,18 +40,12 @@ export default function Home() {
     try {
       const result = await generateMML(messages, apiKey, endpoint, model);
       setMmlCode(result.mmlCode);
-      
-      // Add assistant response to the chat (brief description only)
       const description = result.content.replace(/```[\s\S]*?```/g, '').trim();
       if ((window as any).__addAssistantMessage) {
         (window as any).__addAssistantMessage(description || "Updated the MML object.");
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred.");
-      }
+      setError(err instanceof Error ? err.message : "An unknown error occurred.");
     } finally {
       setIsGenerating(false);
     }
@@ -45,9 +56,15 @@ export default function Home() {
     setError(null);
   };
 
+  // Called by GalleryPanel when user loads a saved object
+  const handleLoadFromGallery = (code: string) => {
+    setMmlCode(code);
+    setError(null);
+  };
+
   return (
     <main className="flex h-screen w-screen flex-col overflow-hidden bg-[var(--background)]">
-      
+
       {/* Header */}
       <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black/20 z-10 w-full shrink-0">
         <div className="flex items-center gap-3">
@@ -64,7 +81,7 @@ export default function Home() {
 
       {/* Main Workspace */}
       <div className="flex flex-1 p-4 gap-4 overflow-hidden">
-        
+
         {/* Left Pane - Generator */}
         <section className="w-1/3 min-w-[350px] max-w-sm shrink-0 flex flex-col overflow-hidden rounded-2xl border border-white/5 bg-black/10 backdrop-blur-xl">
           <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
@@ -72,11 +89,11 @@ export default function Home() {
 
         {/* Right Pane - Editor & Preview */}
         <section className="flex-1 flex flex-col gap-4 overflow-hidden min-w-0">
-          
+
           {/* Top Half - Live 3D Preview */}
           <div className="flex-[3] relative rounded-2xl border border-white/5 bg-gradient-to-b from-[#0a0a0f] to-[#030308] overflow-hidden">
             <ScenePreview mmlCode={mmlCode} lighting={lighting} />
-            
+
             {/* Lighting Presets */}
             <div className="absolute top-4 right-4 z-10 flex gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/10">
               <button
@@ -112,11 +129,14 @@ export default function Home() {
 
           {/* Bottom Half - Source Code */}
           <div className="flex-[2] min-h-0">
-            <CodeEditor code={mmlCode} onChange={setMmlCode} />
+            <CodeEditor code={mmlCode} onChange={setMmlCode} userId={userId} />
           </div>
 
         </section>
       </div>
+
+      {/* Side Panels */}
+      <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
       <WorldChat currentMmlDescription={mmlCode} />
     </main>
   );

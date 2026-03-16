@@ -23,16 +23,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { mmlCode, filename } = await req.json();
+    const { mmlCode, filename, userId, objectName } = await req.json();
 
     if (!mmlCode || typeof mmlCode !== "string") {
       return NextResponse.json({ error: "No MML code provided." }, { status: 400 });
     }
 
+    // Sanitize userId to prevent path traversal
+    const safeUserId = (userId || "anonymous").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64) || "anonymous";
+    const safeObjectName = (objectName || "untitled").replace(/[^a-zA-Z0-9 _-]/g, "").trim().slice(0, 80) || "untitled";
+
     // Upload raw MML — Otherside expects plain MML tags, not an HTML document wrapper
     const fullContent = mmlCode.trim();
 
-    const key = `${PREFIX}/${filename || `${randomUUID()}.mml`}`;
+    const fileId = filename || `${randomUUID()}.mml`;
+    const key = `${PREFIX}/${safeUserId}/${fileId}`;
 
     await s3.send(
       new PutObjectCommand({
@@ -46,8 +51,9 @@ export async function POST(req: NextRequest) {
     );
 
     const publicUrl = `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    const shareUrl = `/share/${key}`;
 
-    return NextResponse.json({ url: publicUrl, key });
+    return NextResponse.json({ url: publicUrl, key, shareUrl, userId: safeUserId, objectName: safeObjectName });
   } catch (err: any) {
     console.error("[S3 Upload Error]", err);
     return NextResponse.json(

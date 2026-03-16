@@ -6,9 +6,10 @@ import { useState } from "react";
 interface CodeEditorProps {
   code: string;
   onChange: (code: string) => void;
+  userId?: string;
 }
 
-export function CodeEditor({ code, onChange }: CodeEditorProps) {
+export function CodeEditor({ code, onChange, userId }: CodeEditorProps) {
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,7 +39,7 @@ export function CodeEditor({ code, onChange }: CodeEditorProps) {
       const res = await fetch("/api/upload-mml", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mmlCode: code }),
+        body: JSON.stringify({ mmlCode: code, userId: userId || "anonymous" }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -74,7 +75,7 @@ export function CodeEditor({ code, onChange }: CodeEditorProps) {
             ) : (
               <CloudUpload className="w-3.5 h-3.5" />
             )}
-            {isSaving ? "Saving..." : "Save to S3"}
+            {isSaving ? "Saving..." : "SAVE"}
           </button>
 
           {/* Copy raw MML */}
