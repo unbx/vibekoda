@@ -66,7 +66,7 @@ export async function generateMML(
       },
       body: JSON.stringify({
         model: model || 'claude-opus-4-6',
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: SYSTEM_PROMPT,
         messages: userMessages,
         temperature: 0.2
@@ -82,6 +82,7 @@ export async function generateMML(
       body: JSON.stringify({
         model: model || 'gpt-4o-mini',
         messages: fullMessages,
+        max_tokens: 8192,
         temperature: 0.2
       })
     };
@@ -104,8 +105,12 @@ export async function generateMML(
       content = data.choices[0].message.content;
     }
 
-    // Extract MML code from the markdown block
-    const mmlMatch = content.match(/```(?:html|xml)?\n([\s\S]*?)```/);
+    // Extract MML code from the markdown block.
+    // Also handles truncated responses where the closing ``` is missing.
+    const mmlMatch =
+      content.match(/```(?:html|xml)?\n([\s\S]*?)```/) ||  // complete block
+      content.match(/```(?:html|xml)?\n([\s\S]+)/) ||      // unclosed block (truncated)
+      content.match(/(<m-group[\s\S]+)/);                  // bare MML fallback
     const mmlCode = mmlMatch ? mmlMatch[1].trim() : content.trim();
 
     return { content, mmlCode };
