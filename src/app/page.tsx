@@ -1,23 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChatInterface } from "@/components/ChatInterface";
 import { CodeEditor } from "@/components/CodeEditor";
 import { ScenePreview } from "@/components/ScenePreview";
 import { GalleryPanel } from "@/components/GalleryPanel";
 import { WorldChat } from "@/components/WorldChat";
-import { WalletButton } from "@/components/WalletButton";
 import { generateMML, DEMO_MML } from "@/lib/ai";
 import type { Message } from "@/lib/ai";
 import { AlertCircle, Sun, Moon, Sunset } from "lucide-react";
+import dynamic from "next/dynamic";
 
-let useGlyph: () => { user?: { evmWallet?: { address?: string } }; authenticated?: boolean };
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  useGlyph = require("@use-glyph/sdk-react").useGlyph;
-} catch {
-  useGlyph = () => ({});
-}
+// Both loaded client-side only — Glyph SDK has browser-only modules
+const WalletButton = dynamic(
+  () => import("@/components/WalletButton").then(m => ({ default: m.WalletButton })),
+  { ssr: false, loading: () => null }
+);
+const GlyphUserSync = dynamic(
+  () => import("@/components/GlyphUserSync").then(m => ({ default: m.GlyphUserSync })),
+  { ssr: false, loading: () => null }
+);
 
 type LightingPreset = "studio" | "sunset" | "night";
 
@@ -37,11 +39,12 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [lighting, setLighting] = useState<LightingPreset>("studio");
   const [localUserId, setLocalUserId] = useState<string>("");
-
-  // Try to get Glyph wallet address; fall back to localStorage UUID
-  const glyphData = useGlyph();
-  const walletAddress = glyphData?.authenticated ? glyphData?.user?.evmWallet?.address : undefined;
+  const [walletAddress, setWalletAddress] = useState<string | undefined>();
   const userId = walletAddress || localUserId;
+
+  const handleWalletAddress = useCallback((addr: string | undefined) => {
+    setWalletAddress(addr);
+  }, []);
 
   // Load or create persistent user ID from localStorage (fallback when no wallet)
   useEffect(() => {
@@ -153,6 +156,7 @@ export default function Home() {
       </div>
 
       {/* Side Panels */}
+      <GlyphUserSync onAddress={handleWalletAddress} />
       <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
       <WorldChat currentMmlDescription={mmlCode} />
     </main>
