@@ -40,12 +40,18 @@ export default function Home() {
   const [lighting, setLighting] = useState<LightingPreset>("studio");
   const [localUserId, setLocalUserId] = useState<string>("");
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
+  const [glyphUsername, setGlyphUsername] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("build");
   const [codeCollapsed, setCodeCollapsed] = useState(false);
   const userId = walletAddress || localUserId;
+  const glyphConnected = !!walletAddress;
 
   const handleWalletAddress = useCallback((addr: string | undefined) => {
     setWalletAddress(addr);
+  }, []);
+
+  const handleGlyphUsername = useCallback((name: string | null) => {
+    setGlyphUsername(name);
   }, []);
 
   useEffect(() => {
@@ -209,11 +215,17 @@ export default function Home() {
           </div>
 
         </section>
+
+        {/* ─── Right Pane: World Chat (non-overlapping) ─── */}
+        <WorldChat
+          currentMmlDescription={mmlCode}
+          glyphUsername={glyphUsername}
+          glyphConnected={glyphConnected}
+        />
       </div>
 
       {/* Hidden helpers */}
-      <GlyphUserSync onAddress={handleWalletAddress} />
-      <WorldChat currentMmlDescription={mmlCode} />
+      <GlyphUserSync onAddress={handleWalletAddress} onUsername={handleGlyphUsername} />
     </main>
   );
 }
