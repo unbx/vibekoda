@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ChatInterface } from "@/components/ChatInterface";
-import { CodeEditor } from "@/components/CodeEditor";
+import { CodeEditor, CodeEditorActions } from "@/components/CodeEditor";
 import { ScenePreview } from "@/components/ScenePreview";
 import { GalleryPanel } from "@/components/GalleryPanel";
 import { WorldChat } from "@/components/WorldChat";
 import { generateMML, DEMO_MML } from "@/lib/ai";
 import type { Message } from "@/lib/ai";
-import { AlertCircle, Sun, Moon, Sunset } from "lucide-react";
+import { AlertCircle, Lightbulb, Moon, Sunset, Hammer, LayoutGrid, ChevronDown, ChevronUp } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const WalletButton = dynamic(
@@ -21,6 +21,7 @@ const GlyphUserSync = dynamic(
 );
 
 type LightingPreset = "studio" | "sunset" | "night";
+type LeftTab = "build" | "gallery";
 
 function generateUserId(): string {
   const key = "vibekoda_user_id";
@@ -39,6 +40,8 @@ export default function Home() {
   const [lighting, setLighting] = useState<LightingPreset>("studio");
   const [localUserId, setLocalUserId] = useState<string>("");
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
+  const [leftTab, setLeftTab] = useState<LeftTab>("build");
+  const [codeCollapsed, setCodeCollapsed] = useState(false);
   const userId = walletAddress || localUserId;
 
   const handleWalletAddress = useCallback((addr: string | undefined) => {
@@ -74,6 +77,7 @@ export default function Home() {
   const handleLoadFromGallery = (code: string) => {
     setMmlCode(code);
     setError(null);
+    setLeftTab("build");
   };
 
   return (
@@ -108,22 +112,57 @@ export default function Home() {
       {/* ═══════ MAIN WORKSPACE — Non-overlapping split layout ═══════ */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ─── Left Pane: Chat/Builder ─── */}
+        {/* ─── Left Pane: Build/Gallery with pill toggle ─── */}
         <section className="w-[340px] min-w-[300px] max-w-[400px] shrink-0 flex flex-col overflow-hidden border-r border-white/[0.06] bg-[var(--panel-bg)]">
-          <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
+          {/* Content area */}
+          <div className="flex-1 overflow-hidden">
+            {leftTab === "build" ? (
+              <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
+            ) : (
+              <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
+            )}
+          </div>
+
+          {/* Pill toggle at bottom */}
+          <div className="shrink-0 border-t border-white/[0.06] px-4 py-2.5 flex justify-center">
+            <div className="flex bg-black/40 rounded-full p-0.5 border border-white/[0.06]">
+              <button
+                onClick={() => setLeftTab("build")}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] tracking-[0.12em] font-display-light transition-all ${
+                  leftTab === "build"
+                    ? "bg-[var(--primary)] text-white shadow-lg"
+                    : "text-[var(--text-muted)] hover:text-white"
+                }`}
+              >
+                <Hammer className="w-3 h-3" />
+                BUILD
+              </button>
+              <button
+                onClick={() => setLeftTab("gallery")}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] tracking-[0.12em] font-display-light transition-all ${
+                  leftTab === "gallery"
+                    ? "bg-[var(--primary)] text-white shadow-lg"
+                    : "text-[var(--text-muted)] hover:text-white"
+                }`}
+              >
+                <LayoutGrid className="w-3 h-3" />
+                GALLERY
+              </button>
+            </div>
+          </div>
         </section>
 
         {/* ─── Right Pane: Preview + Code ─── */}
         <section className="flex-1 flex flex-col overflow-hidden min-w-0">
 
           {/* Top: Live 3D Preview */}
-          <div className="flex-[3] relative overflow-hidden">
+          <div className={`relative overflow-hidden ${codeCollapsed ? "flex-1" : "flex-[3]"}`}>
             <ScenePreview mmlCode={mmlCode} lighting={lighting} />
 
             {/* Lighting Presets — top-right overlay */}
             <div className="absolute top-4 right-4 z-10 flex gap-1 bg-[var(--panel-bg)] backdrop-blur-xl px-2 py-1.5 rounded-full border border-[var(--panel-border)]">
               {([
-                { key: "studio" as const, icon: Sun, label: "Studio" },
+                { key: "studio" as const, icon: Lightbulb, label: "Studio" },
                 { key: "sunset" as const, icon: Sunset, label: "Sunset" },
                 { key: "night" as const, icon: Moon, label: "Night" },
               ]).map(({ key, icon: Icon, label }) => (
@@ -151,9 +190,22 @@ export default function Home() {
             )}
           </div>
 
-          {/* Bottom: Code Editor */}
-          <div className="flex-[2] min-h-0 border-t border-white/[0.06]">
-            <CodeEditor code={mmlCode} onChange={setMmlCode} userId={userId} />
+          {/* Bottom: Code Editor — collapsible */}
+          <div className={`border-t border-white/[0.06] flex flex-col ${codeCollapsed ? "" : "flex-[2] min-h-0"}`}>
+            {/* Always-visible header bar */}
+            <div className="relative flex items-center justify-between px-4 py-2.5 shrink-0 cursor-pointer hover:bg-white/[0.02] transition-colors" onClick={() => setCodeCollapsed(c => !c)}>
+              <div className="flex items-center gap-2">
+                {codeCollapsed ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
+                <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">MML_OUTPUT.HTML</span>
+              </div>
+              <CodeEditorActions code={mmlCode} userId={userId} />
+            </div>
+            {/* Expandable code area */}
+            {!codeCollapsed && (
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <CodeEditor code={mmlCode} onChange={setMmlCode} userId={userId} />
+              </div>
+            )}
           </div>
 
         </section>
@@ -161,7 +213,6 @@ export default function Home() {
 
       {/* Hidden helpers */}
       <GlyphUserSync onAddress={handleWalletAddress} />
-      <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
       <WorldChat currentMmlDescription={mmlCode} />
     </main>
   );

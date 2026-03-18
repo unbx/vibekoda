@@ -24,11 +24,16 @@ export function WalletButton() {
   const handleConnect = useCallback(() => {
     setPopupBlocked(false);
     setConnecting(true);
+
+    // Timeout: reset button if connect() never resolves (e.g. popup closed)
+    const timeout = setTimeout(() => setConnecting(false), 60000);
+
     // Call connect() synchronously within the click handler so the browser
     // treats the popup as a user-initiated gesture (async/await loses this).
     Promise.resolve(connect()).then(
-      () => setConnecting(false),
+      () => { clearTimeout(timeout); setConnecting(false); },
       (err: any) => {
+        clearTimeout(timeout);
         const msg = err?.message?.toLowerCase() || "";
         if (msg.includes("popup") || msg.includes("blocked") || msg.includes("denied")) {
           setPopupBlocked(true);

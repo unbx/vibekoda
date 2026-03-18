@@ -125,7 +125,6 @@ export async function generateMML(
 
 export const DEMO_MML = `<m-group id="neon-palm-tree">
   <!-- Template Base -->
-  <m-label text="Welcome to VibeKoda Studio" y="3.5" alignment="center" font-size="0.4" color="#a855f7"></m-label>
   <m-cube y="1" scale="1.5" color="#2d1b4e"></m-cube>
   <m-light type="point" intensity="3" distance="8" y="3" color="#a855f7"></m-light>
 </m-group>`;

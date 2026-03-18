@@ -1,35 +1,31 @@
 "use client";
 
-import { Copy, Check, Code2, CloudUpload, Link, Loader2, ExternalLink } from "lucide-react";
+import { Copy, Check, CloudUpload, Link, Loader2, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
 interface CodeEditorProps {
   code: string;
   onChange: (code: string) => void;
   userId?: string;
+  headerSlot?: boolean; // when true, render only the action buttons (for external header)
 }
 
-export function CodeEditor({ code, onChange, userId }: CodeEditorProps) {
+export function CodeEditorActions({ code, userId }: { code: string; userId?: string }) {
   const [copied, setCopied] = useState(false);
-  const [urlCopied, setUrlCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hostedUrl, setHostedUrl] = useState<string | null>(null);
+  const [urlCopied, setUrlCopied] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     await navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCopyUrl = async () => {
-    if (!hostedUrl) return;
-    await navigator.clipboard.writeText(hostedUrl);
-    setUrlCopied(true);
-    setTimeout(() => setUrlCopied(false), 2000);
-  };
-
-  const handleSaveToS3 = async () => {
+  const handleSaveToS3 = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!code.trim()) return;
     setIsSaving(true);
     setSaveError(null);
@@ -54,44 +50,38 @@ export function CodeEditor({ code, onChange, userId }: CodeEditorProps) {
     }
   };
 
-  return (
-    <div className="flex flex-col h-full w-full overflow-hidden relative">
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] shrink-0">
-        <div className="flex items-center gap-2">
-          <Code2 className="w-3.5 h-3.5 text-[var(--primary)]" />
-          <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">MML_OUTPUT.HTML</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {/* Save to S3 */}
-          <button
-            onClick={handleSaveToS3}
-            disabled={isSaving || !code.trim()}
-            title="Save to S3 and get a hosted URL"
-            className="btn-otherside-outline flex items-center gap-1.5 px-3 py-1.5 text-[10px] disabled:opacity-30"
-          >
-            {isSaving ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <CloudUpload className="w-3 h-3" />
-            )}
-            {isSaving ? "SAVING..." : "SAVE"}
-          </button>
+  const handleCopyUrl = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!hostedUrl) return;
+    await navigator.clipboard.writeText(hostedUrl);
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
+  };
 
-          {/* Copy raw MML */}
-          <button
-            onClick={handleCopy}
-            className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
-            title="Copy MML code"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
-          </button>
-        </div>
+  return (
+    <>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={handleSaveToS3}
+          disabled={isSaving || !code.trim()}
+          title="Save to S3 and get a hosted URL"
+          className="btn-otherside-outline flex items-center gap-1.5 px-3 py-1.5 text-[10px] disabled:opacity-30"
+        >
+          {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CloudUpload className="w-3 h-3" />}
+          {isSaving ? "SAVING..." : "SAVE"}
+        </button>
+        <button
+          onClick={handleCopy}
+          className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
+          title="Copy MML code"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
+        </button>
       </div>
 
-      {/* Hosted URL banner */}
+      {/* Hosted URL / error banner — renders inline after buttons' parent */}
       {(hostedUrl || saveError) && (
-        <div className={`px-4 py-2 border-b flex items-center gap-2 ${
+        <div className={`absolute left-0 right-0 top-full px-4 py-2 border-b flex items-center gap-2 z-10 ${
           hostedUrl ? "bg-green-950/30 border-green-500/15" : "bg-red-950/30 border-red-500/15"
         }`}>
           {hostedUrl ? (
@@ -110,16 +100,19 @@ export function CodeEditor({ code, onChange, userId }: CodeEditorProps) {
           )}
         </div>
       )}
+    </>
+  );
+}
 
-      {/* Code area */}
-      <div className="flex-1 p-4 bg-black/30 relative group min-h-0">
-        <textarea
-          value={code}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full h-full bg-transparent text-[var(--primary-light)] font-mono text-xs resize-none focus:outline-none leading-relaxed"
-          spellCheck="false"
-        />
-      </div>
+export function CodeEditor({ code, onChange }: CodeEditorProps) {
+  return (
+    <div className="flex-1 p-4 bg-black/30 min-h-0 h-full">
+      <textarea
+        value={code}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full h-full bg-transparent text-[var(--primary-light)] font-mono text-xs resize-none focus:outline-none leading-relaxed"
+        spellCheck="false"
+      />
     </div>
   );
 }
