@@ -289,9 +289,9 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
     } else if (lighting === "night") {
       scene.background = new THREE.Color(0x030306);
       scene.fog = new THREE.Fog(0x030306, 15, 40);
-      if (ambient) { ambient.color.set(0x3333aa); ambient.intensity = 0.25; }
-      if (dirLight) { dirLight.color.set(0x4b7bf5); dirLight.intensity = 0.4; dirLight.position.set(3, 8, 3); }
-      if (fillLight) { fillLight.color.set(0x1a1155); fillLight.intensity = 0.15; }
+      if (ambient) { ambient.color.set(0xffaacc); ambient.intensity = 0.5; }
+      if (dirLight) { dirLight.color.set(0x4b7bf5); dirLight.intensity = 0.6; dirLight.position.set(3, 8, 3); }
+      if (fillLight) { fillLight.color.set(0xff8899); fillLight.intensity = 0.35; }
     }
   }, [lighting]);
 
