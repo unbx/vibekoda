@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Settings, X, Check, AlertCircle, Wallet, Bot, Eye, EyeOff } from "lucide-react";
+import { Settings, X, Check, AlertCircle, Wallet, Bot, Eye, EyeOff, LogOut, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SetupPanelProps {
@@ -9,6 +9,8 @@ interface SetupPanelProps {
   glyphUsername: string | null;
   walletAddress?: string;
   onConnectGlyph?: () => void;
+  onDisconnectGlyph?: () => void;
+  onOpenAiSettings?: () => void;
 }
 
 const AI_SETTINGS_KEY = "vibekoda_ai_settings";
@@ -21,7 +23,7 @@ function loadAiSettings(): { provider: string; apiKey: string; endpoint: string;
   }
 }
 
-export function SetupPanel({ glyphConnected, glyphUsername, walletAddress }: SetupPanelProps) {
+export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onConnectGlyph, onDisconnectGlyph, onOpenAiSettings }: SetupPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [aiSettings, setAiSettings] = useState<{ provider: string; apiKey: string; endpoint: string; model: string } | null>(null);
   const [showKey, setShowKey] = useState(false);
@@ -106,22 +108,45 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress }: Set
                   <span className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)]">GLYPH WALLET</span>
                 </div>
                 {glyphConnected ? (
-                  <div className="flex items-center gap-2 bg-green-950/20 border border-green-500/15 rounded-xl px-3 py-2.5">
-                    <Check className="w-3.5 h-3.5 text-green-400 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-green-300 font-semibold truncate">
-                        {glyphUsername || walletAddress?.slice(0, 6) + "..." + walletAddress?.slice(-4)}
-                      </p>
-                      <p className="text-[10px] text-green-400/60 font-mono">Connected</p>
+                  <div className="flex items-center justify-between bg-green-950/20 border border-green-500/15 rounded-xl px-3 py-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Check className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-green-300 font-semibold truncate">
+                          {glyphUsername || walletAddress?.slice(0, 6) + "..." + walletAddress?.slice(-4)}
+                        </p>
+                        <p className="text-[10px] text-green-400/60 font-mono">Connected</p>
+                      </div>
                     </div>
+                    {onDisconnectGlyph && (
+                      <button
+                        onClick={() => { onDisconnectGlyph(); setIsOpen(false); }}
+                        className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors text-[var(--text-muted)] hover:text-red-400 shrink-0"
+                        title="Disconnect Glyph"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 bg-amber-950/20 border border-amber-500/15 rounded-xl px-3 py-2.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <div>
-                      <p className="text-xs text-amber-300">Not connected</p>
-                      <p className="text-[10px] text-amber-400/60 font-mono">Needed for saving, chat, and identity</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 bg-amber-950/20 border border-amber-500/15 rounded-xl px-3 py-2.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <div>
+                        <p className="text-xs text-amber-300">Not connected</p>
+                        <p className="text-[10px] text-amber-400/60 font-mono">Needed for saving, chat, and identity</p>
+                      </div>
                     </div>
+                    {onConnectGlyph && (
+                      <button
+                        onClick={() => { onConnectGlyph(); setIsOpen(false); }}
+                        className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl"
+                      >
+                        <Wallet className="w-3 h-3" />
+                        CONNECT GLYPH
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -133,37 +158,58 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress }: Set
                   <span className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)]">AI PROVIDER</span>
                 </div>
                 {hasApiKey ? (
-                  <div className="flex items-center gap-2 bg-green-950/20 border border-green-500/15 rounded-xl px-3 py-2.5">
-                    <Check className="w-3.5 h-3.5 text-green-400 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-green-300 font-semibold">{providerLabel}: {aiSettings?.model}</p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <p className="text-[10px] text-green-400/60 font-mono truncate">
-                          {showKey ? aiSettings?.apiKey : maskedKey}
-                        </p>
-                        <button onClick={() => setShowKey(!showKey)} className="text-green-400/40 hover:text-green-400 transition-colors shrink-0">
-                          {showKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                        </button>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 bg-green-950/20 border border-green-500/15 rounded-xl px-3 py-2.5">
+                      <Check className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-green-300 font-semibold">{providerLabel}: {aiSettings?.model}</p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <p className="text-[10px] text-green-400/60 font-mono truncate">
+                            {showKey ? aiSettings?.apiKey : maskedKey}
+                          </p>
+                          <button onClick={() => setShowKey(!showKey)} className="text-green-400/40 hover:text-green-400 transition-colors shrink-0">
+                            {showKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
+                    {onOpenAiSettings && (
+                      <button
+                        onClick={() => { onOpenAiSettings(); setIsOpen(false); }}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] text-[var(--text-secondary)] hover:text-white transition-all font-display-light"
+                      >
+                        <Settings className="w-3 h-3" />
+                        CHANGE SETTINGS
+                      </button>
+                    )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 bg-amber-950/20 border border-amber-500/15 rounded-xl px-3 py-2.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <div>
-                      <p className="text-xs text-amber-300">Not configured</p>
-                      <p className="text-[10px] text-amber-400/60 font-mono">Needed to generate MML objects</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 bg-amber-950/20 border border-amber-500/15 rounded-xl px-3 py-2.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <div>
+                        <p className="text-xs text-amber-300">Not configured</p>
+                        <p className="text-[10px] text-amber-400/60 font-mono">Needed to generate MML objects</p>
+                      </div>
                     </div>
+                    {onOpenAiSettings && (
+                      <button
+                        onClick={() => { onOpenAiSettings(); setIsOpen(false); }}
+                        className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl"
+                      >
+                        <Bot className="w-3 h-3" />
+                        CONFIGURE API
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Tip */}
+              {/* Status summary */}
               <div className="text-[10px] text-[var(--text-muted)] font-mono leading-relaxed border-t border-white/[0.06] pt-3">
-                {!glyphConnected && !hasApiKey && "Connect Glyph and add your API key in the Object Builder settings to get started."}
-                {!glyphConnected && hasApiKey && "Connect Glyph using the button in the header to save objects and chat."}
-                {glyphConnected && !hasApiKey && "Open the settings gear in Object Builder to add your API key."}
                 {allConfigured && "You're all set! Start building MML objects for the Otherside."}
+                {!allConfigured && "Complete the setup above to unlock all features."}
               </div>
             </div>
           </motion.div>

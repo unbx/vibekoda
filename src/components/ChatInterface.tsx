@@ -75,6 +75,12 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
     }
   };
 
+  // Expose settings opener for SetupPanel
+  useEffect(() => {
+    (window as any).__openAiSettings = () => setShowSettings(true);
+    return () => { delete (window as any).__openAiSettings; };
+  });
+
   const handleNewObject = () => {
     setChatHistory([]);
     setMessageHistory([]);

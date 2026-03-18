@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useGlyph, useNativeGlyphConnection } from "@use-glyph/sdk-react";
 import { Wallet, LogOut, Loader2, AlertTriangle } from "lucide-react";
 
-export function WalletButton() {
+export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: { connect: () => void; disconnect: () => void }) => void } = {}) {
   const { user, authenticated, ready } = useGlyph();
   const { connect, disconnect } = useNativeGlyphConnection();
   const [timedOut, setTimedOut] = useState(false);
@@ -43,6 +43,13 @@ export function WalletButton() {
       }
     );
   }, [connect]);
+
+  // Expose connect/disconnect to parent
+  useEffect(() => {
+    if (onExposeActions) {
+      onExposeActions({ connect: handleConnect, disconnect });
+    }
+  }, [onExposeActions, handleConnect, disconnect]);
 
   // Show loading only briefly
   if (!ready && !timedOut) {

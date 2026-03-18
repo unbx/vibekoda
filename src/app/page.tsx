@@ -44,8 +44,13 @@ export default function Home() {
   const [glyphUsername, setGlyphUsername] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("build");
   const [codeCollapsed, setCodeCollapsed] = useState(false);
+  const [glyphActions, setGlyphActions] = useState<{ connect: () => void; disconnect: () => void } | null>(null);
   const userId = glyphUsername || walletAddress || localUserId;
   const glyphConnected = !!walletAddress;
+
+  const handleGlyphActions = useCallback((actions: { connect: () => void; disconnect: () => void }) => {
+    setGlyphActions(actions);
+  }, []);
 
   const handleWalletAddress = useCallback((addr: string | undefined) => {
     setWalletAddress(addr);
@@ -106,11 +111,14 @@ export default function Home() {
 
         {/* Right: Wallet + Setup + Status */}
         <div className="flex items-center gap-3">
-          <WalletButton />
+          <WalletButton onExposeActions={handleGlyphActions} />
           <SetupPanel
             glyphConnected={glyphConnected}
             glyphUsername={glyphUsername}
             walletAddress={walletAddress}
+            onConnectGlyph={glyphActions?.connect}
+            onDisconnectGlyph={glyphActions?.disconnect}
+            onOpenAiSettings={() => { setLeftTab("build"); setTimeout(() => (window as any).__openAiSettings?.(), 100); }}
           />
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
