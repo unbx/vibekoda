@@ -16,7 +16,9 @@ export function GlyphUserSync({ onAddress }: Props) {
   const { user, authenticated } = useGlyph();
 
   useEffect(() => {
-    const address = authenticated ? user?.evmWallet?.address : undefined;
+    // Glyph SDK v2 types are loose — cast user to access wallet fields
+    const u = user as any;
+    const address = authenticated ? u?.evmWallet?.address : undefined;
     onAddress(address);
   }, [authenticated, user, onAddress]);
 
