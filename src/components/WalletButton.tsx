@@ -1,16 +1,26 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useGlyph, useNativeGlyphConnection } from "@use-glyph/sdk-react";
 import { Wallet, LogOut, Loader2 } from "lucide-react";
 
 export function WalletButton() {
   const { user, authenticated, ready } = useGlyph();
   const { connect, disconnect } = useNativeGlyphConnection();
+  const [timedOut, setTimedOut] = useState(false);
 
   // Glyph SDK v2 types are loose — cast user to access wallet fields
   const u = user as any;
 
-  if (!ready) {
+  // If Glyph SDK doesn't become ready after 4s, show the connect button anyway
+  useEffect(() => {
+    const timer = setTimeout(() => setTimedOut(true), 4000);
+    if (ready) clearTimeout(timer);
+    return () => clearTimeout(timer);
+  }, [ready]);
+
+  // Show loading only briefly — then fall through to connect button
+  if (!ready && !timedOut) {
     return (
       <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs font-mono">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -45,7 +55,7 @@ export function WalletButton() {
       className="btn-otherside-outline flex items-center gap-2 px-4 py-1.5 text-[10px] tracking-[0.12em]"
     >
       <Wallet className="w-3.5 h-3.5" />
-      CONNECT
+      CONNECT GLYPH
     </button>
   );
 }

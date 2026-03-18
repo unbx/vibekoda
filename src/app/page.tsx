@@ -129,7 +129,7 @@ export default function Home() {
         </div>
 
         {/* ─── Lighting Controls (top-right overlay) ─── */}
-        <div className="absolute top-4 right-4 z-20 flex gap-1 bg-[var(--panel-bg)] backdrop-blur-xl px-2 py-1.5 rounded-full border border-[var(--panel-border)]">
+        <div className="absolute top-4 right-4 z-40 flex gap-1 bg-[var(--panel-bg)] backdrop-blur-xl px-2 py-1.5 rounded-full border border-[var(--panel-border)]">
           {([
             { key: "studio" as const, icon: Sun, label: "Studio" },
             { key: "sunset" as const, icon: Sunset, label: "Sunset" },
@@ -151,7 +151,7 @@ export default function Home() {
         </div>
 
         {/* ─── Panel Toggle Buttons (top-left overlay) ─── */}
-        <div className="absolute top-4 left-4 z-20 flex gap-2">
+        <div className="absolute top-4 left-4 z-40 flex gap-2">
           <button
             onClick={() => setChatOpen(!chatOpen)}
             className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-all backdrop-blur-xl ${
@@ -202,9 +202,9 @@ export default function Home() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -400, opacity: 0 }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="absolute top-0 left-0 bottom-0 z-30 w-[380px] max-w-[85vw] flex flex-col"
+              className="absolute top-0 left-0 bottom-0 z-30 w-[380px] max-w-[85vw] flex flex-col pointer-events-none"
             >
-              <div className="m-3 mt-14 mb-3 flex-1 flex flex-col overflow-hidden rounded-2xl glass-panel">
+              <div className="m-3 mt-14 mb-3 flex-1 flex flex-col overflow-hidden rounded-2xl glass-panel pointer-events-auto">
                 <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
               </div>
             </motion.div>
