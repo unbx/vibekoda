@@ -20,6 +20,12 @@
 }
 
 /* ─── Top Gradient Line (Otherside signature) ─── */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 html::before {
   content: "";
   display: block;
@@ -28,7 +34,9 @@ html::before {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #E84BF5, #7B6CF6, #4B7BF5, #7B6CF6, #E84BF5);
+  background: linear-gradient(90deg, #E84BF5, #7B6CF6, #4B7BF5, #7B6CF6, #E84BF5, #7B6CF6, #4B7BF5, #7B6CF6, #E84BF5);
+  background-size: 200% 100%;
+  animation: gradient-shift 8s ease-in-out infinite;
   z-index: 9999;
 }
 
