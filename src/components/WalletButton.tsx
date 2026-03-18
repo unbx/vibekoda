@@ -21,21 +21,22 @@ export function WalletButton() {
     return () => clearTimeout(timer);
   }, [ready]);
 
-  const handleConnect = useCallback(async () => {
+  const handleConnect = useCallback(() => {
     setPopupBlocked(false);
     setConnecting(true);
-    try {
-      await connect();
-    } catch (err: any) {
-      // Detect popup blocker — the error message varies by browser
-      const msg = err?.message?.toLowerCase() || "";
-      if (msg.includes("popup") || msg.includes("blocked") || msg.includes("denied")) {
-        setPopupBlocked(true);
+    // Call connect() synchronously within the click handler so the browser
+    // treats the popup as a user-initiated gesture (async/await loses this).
+    Promise.resolve(connect()).then(
+      () => setConnecting(false),
+      (err: any) => {
+        const msg = err?.message?.toLowerCase() || "";
+        if (msg.includes("popup") || msg.includes("blocked") || msg.includes("denied")) {
+          setPopupBlocked(true);
+        }
+        console.warn("[Glyph] Connect error:", err);
+        setConnecting(false);
       }
-      console.warn("[Glyph] Connect error:", err);
-    } finally {
-      setConnecting(false);
-    }
+    );
   }, [connect]);
 
   // Show loading only briefly
