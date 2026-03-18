@@ -24,6 +24,14 @@ const POLL_INTERVAL = 8000;
 
 export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected }: WorldChatProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [world, setWorld] = useState<World>("NEXUS");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -147,15 +155,15 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
 
   return (
     <section
-      className={`shrink-0 flex flex-col border-l border-[var(--primary)]/15 bg-[rgba(16,13,28,0.95)] transition-all ${
-        isOpen ? "w-[320px] min-w-[280px]" : "w-10"
-      } overflow-hidden`}
+      className={`shrink-0 flex flex-col border-l border-[var(--primary)]/15 bg-[rgba(16,13,28,0.95)] transition-all w-full lg:w-auto ${
+        isOpen ? "lg:w-[320px] lg:min-w-[280px]" : "lg:w-10"
+      } overflow-hidden flex-1 lg:flex-initial`}
     >
-      {/* Collapsed: vertical label strip */}
+      {/* Collapsed: vertical label strip (desktop only) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex flex-col items-center justify-center gap-2 h-full w-full py-4 text-[var(--text-secondary)] hover:text-white hover:bg-[var(--primary)]/5 transition-colors"
+          className="hidden lg:flex flex-col items-center justify-center gap-2 h-full w-full py-4 text-[var(--text-secondary)] hover:text-white hover:bg-[var(--primary)]/5 transition-colors"
           title="Open World Chat"
         >
           <Radio className="w-3.5 h-3.5 text-[var(--primary)] animate-pulse" />
@@ -166,7 +174,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
         </button>
       )}
 
-      {isOpen && (
+      {(isOpen || isMobile) && (
         <>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--primary)]/15 bg-[var(--primary)]/5 shrink-0">
@@ -174,7 +182,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
               <Radio className="w-3.5 h-3.5 text-[var(--primary)] animate-pulse" />
               <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">WORLD CHAT</span>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] hover:text-white transition-colors">
+            <button onClick={() => setIsOpen(false)} className="hidden lg:block text-[var(--text-muted)] hover:text-white transition-colors">
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>

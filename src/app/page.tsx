@@ -9,7 +9,7 @@ import { WorldChat } from "@/components/WorldChat";
 import { generateMML, DEMO_MML } from "@/lib/ai";
 import type { Message } from "@/lib/ai";
 import { SetupPanel } from "@/components/SetupPanel";
-import { AlertCircle, Lightbulb, Moon, Sunset, Hammer, LayoutGrid, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertCircle, Lightbulb, Moon, Sunset, Hammer, LayoutGrid, ChevronDown, ChevronUp, ChevronLeft, Radio } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const WalletButton = dynamic(
@@ -23,6 +23,7 @@ const GlyphUserSync = dynamic(
 
 type LightingPreset = "studio" | "sunset" | "night";
 type LeftTab = "build" | "gallery";
+type MobilePanel = "viewer" | "builder" | "chat";
 
 function generateUserId(): string {
   const key = "vibekoda_user_id";
@@ -44,6 +45,8 @@ export default function Home() {
   const [glyphUsername, setGlyphUsername] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("build");
   const [codeCollapsed, setCodeCollapsed] = useState(false);
+  const [isLeftOpen, setIsLeftOpen] = useState(true);
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("viewer");
   const [glyphActions, setGlyphActions] = useState<{ connect: () => void; disconnect: () => void } | null>(null);
   const userId = glyphUsername || walletAddress || localUserId;
   const glyphConnected = !!walletAddress;
@@ -96,7 +99,7 @@ export default function Home() {
     <main className="flex h-screen w-screen flex-col overflow-hidden bg-[var(--background)]">
 
       {/* ═══════ HEADER — Otherside minimal nav ═══════ */}
-      <header className="relative z-40 h-14 flex items-center justify-between px-5 border-b border-white/[0.06] bg-[var(--background)] shrink-0">
+      <header className="relative z-40 h-10 lg:h-14 flex items-center justify-between px-3 lg:px-5 border-b border-white/[0.06] bg-[var(--background)] shrink-0">
         {/* Left: Logo */}
         <div className="flex items-center gap-2.5">
           <img
@@ -105,7 +108,7 @@ export default function Home() {
             className="w-7 h-7 rounded-md object-cover animate-pulse-glow"
           />
           <h1 className="font-display text-sm tracking-[0.15em] text-white">
-            VIBEKODA<span className="text-[var(--primary-light)] ml-1">STUDIO</span>
+            VIBEKODA<span className="text-[var(--primary-light)] ml-1 hidden sm:inline">STUDIO</span>
           </h1>
         </div>
 
@@ -120,7 +123,7 @@ export default function Home() {
             onDisconnectGlyph={glyphActions?.disconnect}
             onOpenAiSettings={() => { setLeftTab("build"); setTimeout(() => (window as any).__openAiSettings?.(), 100); }}
           />
-          <div className="flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             <span className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)]">
               AGENT ACTIVE
@@ -130,50 +133,80 @@ export default function Home() {
       </header>
 
       {/* ═══════ MAIN WORKSPACE — Non-overlapping split layout ═══════ */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
 
-        {/* ─── Left Pane: Build/Gallery with pill toggle ─── */}
-        <section className="w-[340px] min-w-[300px] max-w-[400px] shrink-0 flex flex-col overflow-hidden border-r border-white/[0.06] bg-[var(--panel-bg)]">
-          {/* Content area */}
-          <div className="flex-1 overflow-hidden">
-            {leftTab === "build" ? (
-              <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
-            ) : (
-              <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
-            )}
-          </div>
+        {/* ─── Left Pane: Build/Gallery with pill toggle (collapsible) ─── */}
+        <section
+          className={`shrink-0 flex-col border-r border-white/[0.06] bg-[var(--panel-bg)] transition-all overflow-hidden ${
+            mobilePanel === "builder" ? "flex flex-1" : "hidden"
+          } lg:flex lg:flex-initial ${
+            isLeftOpen ? "lg:w-[340px] lg:min-w-[300px] lg:max-w-[400px]" : "lg:w-10"
+          }`}
+        >
+          {!isLeftOpen ? (
+            <button
+              onClick={() => setIsLeftOpen(true)}
+              className="hidden lg:flex flex-col items-center justify-center gap-2 h-full w-full py-4 text-[var(--text-secondary)] hover:text-white hover:bg-[var(--primary)]/5 transition-colors"
+              title="Open Object Builder"
+            >
+              <Hammer className="w-3.5 h-3.5 text-[var(--primary)]" />
+              <span className="text-[9px] font-display-light tracking-[0.15em] [writing-mode:vertical-rl] rotate-180">
+                OBJECT BUILDER
+              </span>
+            </button>
+          ) : (
+            <>
+              {/* Content area */}
+              <div className="flex-1 overflow-hidden">
+                {leftTab === "build" ? (
+                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
+                ) : (
+                  <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
+                )}
+              </div>
 
-          {/* Pill toggle at bottom */}
-          <div className="shrink-0 border-t border-white/[0.06] px-4 py-2.5 flex justify-center">
-            <div className="flex bg-black/40 rounded-full p-0.5 border border-white/[0.06]">
-              <button
-                onClick={() => setLeftTab("build")}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] tracking-[0.12em] font-display-light transition-all ${
-                  leftTab === "build"
-                    ? "bg-[var(--primary)] text-white shadow-lg"
-                    : "text-[var(--text-muted)] hover:text-white"
-                }`}
-              >
-                <Hammer className="w-3 h-3" />
-                BUILD
-              </button>
-              <button
-                onClick={() => setLeftTab("gallery")}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] tracking-[0.12em] font-display-light transition-all ${
-                  leftTab === "gallery"
-                    ? "bg-[var(--primary)] text-white shadow-lg"
-                    : "text-[var(--text-muted)] hover:text-white"
-                }`}
-              >
-                <LayoutGrid className="w-3 h-3" />
-                GALLERY
-              </button>
-            </div>
-          </div>
+              {/* Pill toggle at bottom */}
+              <div className="shrink-0 border-t border-white/[0.06] px-4 py-2.5 flex items-center">
+                <button
+                  onClick={() => setIsLeftOpen(false)}
+                  className="text-[var(--text-muted)] hover:text-white transition-colors mr-2"
+                  title="Collapse panel"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <div className="flex-1 flex justify-center">
+                  <div className="flex bg-black/40 rounded-full p-0.5 border border-white/[0.06]">
+                    <button
+                      onClick={() => setLeftTab("build")}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] tracking-[0.12em] font-display-light transition-all ${
+                        leftTab === "build"
+                          ? "bg-[var(--primary)] text-white shadow-lg"
+                          : "text-[var(--text-muted)] hover:text-white"
+                      }`}
+                    >
+                      <Hammer className="w-3 h-3" />
+                      BUILD
+                    </button>
+                    <button
+                      onClick={() => setLeftTab("gallery")}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] tracking-[0.12em] font-display-light transition-all ${
+                        leftTab === "gallery"
+                          ? "bg-[var(--primary)] text-white shadow-lg"
+                          : "text-[var(--text-muted)] hover:text-white"
+                      }`}
+                    >
+                      <LayoutGrid className="w-3 h-3" />
+                      GALLERY
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </section>
 
         {/* ─── Right Pane: Preview + Code ─── */}
-        <section className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <section className={`flex-1 flex-col overflow-hidden min-w-0 ${mobilePanel === "viewer" ? "flex" : "hidden"} lg:flex`}>
 
           {/* Top: Live 3D Preview */}
           <div className={`relative overflow-hidden ${codeCollapsed ? "flex-1" : "flex-[3]"}`}>
@@ -232,12 +265,45 @@ export default function Home() {
         </section>
 
         {/* ─── Right Pane: World Chat (non-overlapping) ─── */}
-        <WorldChat
-          currentMmlDescription={mmlCode}
-          glyphUsername={glyphUsername}
-          glyphConnected={glyphConnected}
-        />
+        <div className={`${mobilePanel === "chat" ? "flex flex-1 flex-col" : "hidden"} lg:flex lg:flex-initial lg:shrink-0`}>
+          <WorldChat
+            currentMmlDescription={mmlCode}
+            glyphUsername={glyphUsername}
+            glyphConnected={glyphConnected}
+          />
+        </div>
       </div>
+
+      {/* Mobile bottom tab bar */}
+      <nav className="lg:hidden shrink-0 flex border-t border-white/[0.06] bg-[var(--panel-bg)]">
+        <button
+          onClick={() => setMobilePanel("builder")}
+          className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[9px] font-display-light tracking-[0.12em] transition-colors ${
+            mobilePanel === "builder" ? "text-[var(--primary-light)]" : "text-[var(--text-muted)]"
+          }`}
+        >
+          <Hammer className="w-4 h-4" />
+          BUILD
+        </button>
+        <button
+          onClick={() => setMobilePanel("viewer")}
+          className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[9px] font-display-light tracking-[0.12em] transition-colors ${
+            mobilePanel === "viewer" ? "text-[var(--primary-light)]" : "text-[var(--text-muted)]"
+          }`}
+        >
+          <Lightbulb className="w-4 h-4" />
+          PREVIEW
+        </button>
+        <button
+          onClick={() => setMobilePanel("chat")}
+          className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[9px] font-display-light tracking-[0.12em] transition-colors ${
+            mobilePanel === "chat" ? "text-[var(--primary-light)]" : "text-[var(--text-muted)]"
+          }`}
+        >
+          <Radio className="w-4 h-4" />
+          CHAT
+        </button>
+      </nav>
 
       {/* Hidden helpers */}
       <GlyphUserSync onAddress={handleWalletAddress} onUsername={handleGlyphUsername} />
