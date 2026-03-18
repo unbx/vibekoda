@@ -196,6 +196,15 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
                   <ExternalLink className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                 </a>
               </div>
+              <a
+                href="https://otherside.xyz/mmls"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-1.5 w-full mt-1.5 py-1.5 rounded-lg bg-white/5 hover:bg-[var(--primary)]/20 border border-white/[0.06] hover:border-[var(--primary)]/30 text-[10px] text-[var(--text-muted)] hover:text-[var(--primary-light)] transition-all font-mono"
+              >
+                <ExternalLink className="w-3 h-3" />
+                ADD TO INVENTORY
+              </a>
             </div>
           );
         })}
