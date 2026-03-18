@@ -198,7 +198,7 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
                         className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl"
                       >
                         <Bot className="w-3 h-3" />
-                        CONFIGURE API
+                        CONFIGURE AGENT API
                         <ArrowRight className="w-3 h-3" />
                       </button>
                     )}
