@@ -147,7 +147,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
 
   return (
     <section
-      className={`shrink-0 flex flex-col border-l border-white/[0.06] bg-[var(--panel-bg)] transition-all ${
+      className={`shrink-0 flex flex-col border-l border-[var(--primary)]/15 bg-[rgba(16,13,28,0.95)] transition-all ${
         isOpen ? "w-[320px] min-w-[280px]" : "w-10"
       } overflow-hidden`}
     >
@@ -155,7 +155,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex flex-col items-center justify-center gap-2 h-full w-full py-4 text-[var(--text-muted)] hover:text-white hover:bg-white/[0.02] transition-colors"
+          className="flex flex-col items-center justify-center gap-2 h-full w-full py-4 text-[var(--text-secondary)] hover:text-white hover:bg-[var(--primary)]/5 transition-colors"
           title="Open World Chat"
         >
           <Radio className="w-3.5 h-3.5 text-[var(--primary)] animate-pulse" />
@@ -169,7 +169,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
       {isOpen && (
         <>
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] shrink-0">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--primary)]/15 bg-[var(--primary)]/5 shrink-0">
             <div className="flex items-center gap-2">
               <Radio className="w-3.5 h-3.5 text-[var(--primary)] animate-pulse" />
               <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">WORLD CHAT</span>
@@ -180,7 +180,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
           </div>
 
           {/* World Selector */}
-          <div className="flex border-b border-white/[0.06] shrink-0">
+          <div className="flex border-b border-[var(--primary)]/10 shrink-0">
             {(["SWAMP", "NEXUS"] as World[]).map(w => (
               <button
                 key={w}
@@ -234,14 +234,14 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
             )}
 
             {messages.map((msg) => (
-              <div key={msg.id} className={`group rounded-lg px-3 py-2 ${
+              <div key={msg.id} className={`group rounded-lg px-3 py-2.5 ${
                 msg.username === broadcastName
-                  ? "bg-[var(--primary)]/10 border border-[var(--primary)]/20"
-                  : "bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                  ? "bg-[var(--primary)]/15 border border-[var(--primary)]/25"
+                  : "bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.04] transition-colors"
               }`}>
                 <div className="flex items-center justify-between mb-0.5">
                   <span className={`text-[11px] font-semibold ${
-                    msg.username === broadcastName ? "text-[var(--primary-light)]" : "text-[var(--text-muted)]"
+                    msg.username === broadcastName ? "text-[var(--primary-light)]" : "text-[var(--text-secondary)]"
                   }`}>
                     {msg.username}
                   </span>
@@ -251,7 +251,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-300 leading-relaxed">{msg.message}</p>
+                <p className="text-xs text-gray-200 leading-relaxed">{msg.message}</p>
               </div>
             ))}
             <div ref={messagesEndRef} />
@@ -259,7 +259,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
 
           {/* Broadcast — only when Glyph is connected */}
           {glyphConnected ? (
-            <div className="border-t border-white/[0.06] p-3 shrink-0">
+            <div className="border-t border-[var(--primary)]/15 bg-[var(--primary)]/5 p-3 shrink-0">
               <div className="flex gap-2">
                 <input
                   type="text"
