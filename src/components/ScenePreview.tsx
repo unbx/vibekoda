@@ -155,9 +155,51 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
     const clock = new THREE.Clock();
     clockRef.current = clock;
 
+    // WASD camera movement
+    const keysPressed = new Set<string>();
+    const MOVE_SPEED = 0.08;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!container.matches(":focus-within") && document.activeElement !== container) return;
+      const key = e.key.toLowerCase();
+      if (["w", "a", "s", "d", "q", "e"].includes(key)) {
+        e.preventDefault();
+        keysPressed.add(key);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysPressed.delete(e.key.toLowerCase());
+    };
+    container.setAttribute("tabindex", "0");
+    container.style.outline = "none";
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
     // Animation loop — includes m-attr-anim processing
     const animate = () => {
       animIdRef.current = requestAnimationFrame(animate);
+
+      // WASD movement relative to camera orientation
+      if (keysPressed.size > 0) {
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
+        const right = new THREE.Vector3();
+        right.crossVectors(forward, camera.up).normalize();
+
+        const delta = new THREE.Vector3();
+        if (keysPressed.has("w")) delta.add(forward.clone().multiplyScalar(MOVE_SPEED));
+        if (keysPressed.has("s")) delta.add(forward.clone().multiplyScalar(-MOVE_SPEED));
+        if (keysPressed.has("a")) delta.add(right.clone().multiplyScalar(-MOVE_SPEED));
+        if (keysPressed.has("d")) delta.add(right.clone().multiplyScalar(MOVE_SPEED));
+        if (keysPressed.has("q")) delta.y -= MOVE_SPEED;
+        if (keysPressed.has("e")) delta.y += MOVE_SPEED;
+
+        camera.position.add(delta);
+        controls.target.add(delta);
+      }
+
       const elapsed = clock.getElapsedTime() * 1000; // ms
 
       for (const anim of animationsRef.current) {
@@ -213,6 +255,8 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
     return () => {
       cancelAnimationFrame(animIdRef.current);
       resizeObserver.disconnect();
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
       controls.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
