@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Check, CloudUpload, Link, Loader2, ExternalLink } from "lucide-react";
+import { Copy, Check, CloudUpload, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 interface CodeEditorProps {
@@ -13,8 +13,7 @@ interface CodeEditorProps {
 export function CodeEditorActions({ code, userId }: { code: string; userId?: string }) {
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [hostedUrl, setHostedUrl] = useState<string | null>(null);
-  const [urlCopied, setUrlCopied] = useState(false);
+  const [savedToGallery, setSavedToGallery] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -29,7 +28,7 @@ export function CodeEditorActions({ code, userId }: { code: string; userId?: str
     if (!code.trim()) return;
     setIsSaving(true);
     setSaveError(null);
-    setHostedUrl(null);
+    setSavedToGallery(false);
 
     try {
       const res = await fetch("/api/upload-mml", {
@@ -41,21 +40,14 @@ export function CodeEditorActions({ code, userId }: { code: string; userId?: str
       if (!res.ok) {
         setSaveError(data.error || "Upload failed.");
       } else {
-        setHostedUrl(data.url);
+        setSavedToGallery(true);
+        setTimeout(() => setSavedToGallery(false), 10000);
       }
     } catch {
       setSaveError("Network error. Could not reach upload API.");
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleCopyUrl = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!hostedUrl) return;
-    await navigator.clipboard.writeText(hostedUrl);
-    setUrlCopied(true);
-    setTimeout(() => setUrlCopied(false), 2000);
   };
 
   return (
@@ -79,21 +71,15 @@ export function CodeEditorActions({ code, userId }: { code: string; userId?: str
         </button>
       </div>
 
-      {/* Hosted URL / error banner — renders inline after buttons' parent */}
-      {(hostedUrl || saveError) && (
+      {/* Save feedback banner */}
+      {(savedToGallery || saveError) && (
         <div className={`absolute left-0 right-0 top-full px-4 py-2 border-b flex items-center gap-2 z-10 ${
-          hostedUrl ? "bg-green-950/30 border-green-500/15" : "bg-red-950/30 border-red-500/15"
+          savedToGallery ? "bg-green-950/30 border-green-500/15" : "bg-red-950/30 border-red-500/15"
         }`}>
-          {hostedUrl ? (
+          {savedToGallery ? (
             <>
-              <Link className="w-3 h-3 text-green-400 shrink-0" />
-              <p className="text-[11px] text-green-300 font-mono truncate flex-1" title={hostedUrl}>{hostedUrl}</p>
-              <button onClick={handleCopyUrl} title="Copy URL" className="shrink-0">
-                {urlCopied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3 text-green-500 hover:text-green-300" />}
-              </button>
-              <a href={hostedUrl} target="_blank" rel="noreferrer" className="shrink-0 text-green-500 hover:text-green-300">
-                <ExternalLink className="w-3 h-3" />
-              </a>
+              <Check className="w-3 h-3 text-green-400 shrink-0" />
+              <p className="text-[11px] text-green-300 font-mono">SAVED TO GALLERY</p>
             </>
           ) : (
             <p className="text-[11px] text-red-400 font-mono">{saveError}</p>
