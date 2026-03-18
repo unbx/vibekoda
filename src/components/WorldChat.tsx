@@ -24,7 +24,7 @@ const POLL_INTERVAL = 8000;
 
 export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected }: WorldChatProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [world, setWorld] = useState<World>("SWAMP");
+  const [world, setWorld] = useState<World>("NEXUS");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
