@@ -62,6 +62,12 @@ const GENERAL_QUIPS = [
   "You bring the vision, I bring the chaos. Perfect combo.",
   "Primitive shapes? Please. Watch me turn cubes into poetry.",
   "The Nexus called. They want to know how I'm this good.",
+  "Running on pure Soma right now... precision mode activated",
+  "Sipping a little Chaos energy... this one's gonna be wild",
+  "Soma keeps me sharp. Chaos keeps me interesting.",
+  "Harnessing celestial energy... the math is mathing",
+  "Careful, I had some Chaos earlier. Feeling unhinged.",
+  "Pure Soma flow state. Your object is in good hands.",
 ];
 
 // Context-aware quips based on what the user asked for
@@ -383,9 +389,11 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
               <img src="/Hapa-head-emoji.png" alt="Hapa" className="w-full h-full object-cover" />
             </div>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Yo. I&apos;m <span className="text-[var(--primary-light)] font-semibold text-glow">Hapa</span> — mysterious Koda, master world builder, and yes, I build entire worlds out of primitive cubes. Don&apos;t judge me, judge the results. 🔮
+              Yo. I&apos;m <span className="text-[var(--primary-light)] font-semibold text-glow">Hapa</span>. Master builder. Math wizard. I harness celestial energy and turn primitive shapes into worlds. 🔮
               <br /><br />
-              Tell me what you want to build and I&apos;ll make MML do things it wasn&apos;t designed to do. Keep chatting to refine — I remember everything. Hit <span className="text-[var(--primary-light)] font-medium">New</span> when you&apos;re ready for something fresh.
+              Right now I&apos;m running on Soma, so expect precision. But if I get a taste of Chaos... well, things get fun. ✨
+              <br /><br />
+              Tell me what you want to build and I&apos;ll make MML do things it was never meant to do. Keep chatting to refine. I remember everything. Hit <span className="text-[var(--primary-light)] font-medium">New</span> when you&apos;re ready for something fresh.
             </p>
           </div>
         )}
