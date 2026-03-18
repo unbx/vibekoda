@@ -258,7 +258,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
           </div>
 
           {/* Broadcast — only when Glyph is connected */}
-          {glyphConnected && (
+          {glyphConnected ? (
             <div className="border-t border-white/[0.06] p-3 shrink-0">
               <div className="flex gap-2">
                 <input
@@ -280,6 +280,12 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
               </div>
               <p className="text-[9px] text-[var(--text-muted)] mt-1.5 font-mono">
                 Broadcasting as <span className="text-[var(--primary-light)]">{broadcastName}</span>
+              </p>
+            </div>
+          ) : (
+            <div className="border-t border-white/[0.06] px-4 py-3 shrink-0">
+              <p className="text-[10px] text-amber-300/80 font-mono text-center">
+                Connect Glyph to chat in the Otherside
               </p>
             </div>
           )}

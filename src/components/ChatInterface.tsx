@@ -16,9 +16,24 @@ interface ChatBubble {
   text: string;
 }
 
+const AI_SETTINGS_KEY = "vibekoda_ai_settings";
+
+function loadAiSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(AI_SETTINGS_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function saveAiSettings(settings: { provider: string; apiKey: string; endpoint: string; model: string }) {
+  localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(settings));
+}
+
 export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInterfaceProps) {
   const [prompt, setPrompt] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [showApiNudge, setShowApiNudge] = useState(false);
   const [provider, setProvider] = useState<"openai" | "anthropic" | "custom">("openai");
   const [apiKey, setApiKey] = useState("");
   const [endpoint, setEndpoint] = useState("https://api.openai.com/v1/chat/completions");
@@ -26,6 +41,25 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
   const [chatHistory, setChatHistory] = useState<ChatBubble[]>([]);
   const [messageHistory, setMessageHistory] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const saved = loadAiSettings();
+    if (saved) {
+      if (saved.provider) setProvider(saved.provider);
+      if (saved.apiKey) setApiKey(saved.apiKey);
+      if (saved.endpoint) setEndpoint(saved.endpoint);
+      if (saved.model) setModel(saved.model);
+    }
+    setSettingsLoaded(true);
+  }, []);
+
+  // Persist settings whenever they change (after initial load)
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    saveAiSettings({ provider, apiKey, endpoint, model });
+  }, [provider, apiKey, endpoint, model, settingsLoaded]);
 
   const handleProviderChange = (newProvider: "openai" | "anthropic" | "custom") => {
     setProvider(newProvider);
@@ -51,6 +85,13 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
     e.preventDefault();
     if (!prompt.trim() || isGenerating) return;
 
+    if (!apiKey) {
+      setShowApiNudge(true);
+      setTimeout(() => setShowApiNudge(false), 5000);
+      return;
+    }
+
+    setShowApiNudge(false);
     const userMessage = prompt.trim();
     setPrompt("");
     setChatHistory(prev => [...prev, { role: "user", text: userMessage }]);
@@ -247,6 +288,28 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* API Key Nudge */}
+      <AnimatePresence>
+        {showApiNudge && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-4 py-2.5 bg-amber-950/30 border-t border-amber-500/20 shrink-0"
+          >
+            <p className="text-[11px] text-amber-300 font-mono">
+              Add your AI API key to start generating{" "}
+              <button
+                onClick={() => { setShowApiNudge(false); setShowSettings(true); }}
+                className="underline text-[var(--primary-light)] hover:text-white transition-colors"
+              >
+                Open Settings →
+              </button>
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input Bar */}
       <div className="p-3 border-t border-white/[0.06] shrink-0">

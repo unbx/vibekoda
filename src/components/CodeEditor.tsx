@@ -10,11 +10,12 @@ interface CodeEditorProps {
   headerSlot?: boolean; // when true, render only the action buttons (for external header)
 }
 
-export function CodeEditorActions({ code, userId }: { code: string; userId?: string }) {
+export function CodeEditorActions({ code, userId, glyphConnected }: { code: string; userId?: string; glyphConnected?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedToGallery, setSavedToGallery] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [glyphNudge, setGlyphNudge] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -42,6 +43,10 @@ export function CodeEditorActions({ code, userId }: { code: string; userId?: str
       } else {
         setSavedToGallery(true);
         setTimeout(() => setSavedToGallery(false), 10000);
+        if (!glyphConnected) {
+          setGlyphNudge(true);
+          setTimeout(() => setGlyphNudge(false), 8000);
+        }
       }
     } catch {
       setSaveError("Network error. Could not reach upload API.");
@@ -72,17 +77,26 @@ export function CodeEditorActions({ code, userId }: { code: string; userId?: str
       </div>
 
       {/* Save feedback banner */}
-      {(savedToGallery || saveError) && (
-        <div className={`absolute left-0 right-0 top-full px-4 py-2 border-b flex items-center gap-2 z-10 ${
-          savedToGallery ? "bg-green-950/30 border-green-500/15" : "bg-red-950/30 border-red-500/15"
-        }`}>
-          {savedToGallery ? (
-            <>
-              <Check className="w-3 h-3 text-green-400 shrink-0" />
-              <p className="text-[11px] text-green-300 font-mono">SAVED TO GALLERY</p>
-            </>
-          ) : (
-            <p className="text-[11px] text-red-400 font-mono">{saveError}</p>
+      {(savedToGallery || saveError || glyphNudge) && (
+        <div className="absolute left-0 right-0 top-full z-10 flex flex-col">
+          {(savedToGallery || saveError) && (
+            <div className={`px-4 py-2 border-b flex items-center gap-2 ${
+              savedToGallery ? "bg-green-950/30 border-green-500/15" : "bg-red-950/30 border-red-500/15"
+            }`}>
+              {savedToGallery ? (
+                <>
+                  <Check className="w-3 h-3 text-green-400 shrink-0" />
+                  <p className="text-[11px] text-green-300 font-mono">SAVED TO GALLERY</p>
+                </>
+              ) : (
+                <p className="text-[11px] text-red-400 font-mono">{saveError}</p>
+              )}
+            </div>
+          )}
+          {glyphNudge && (
+            <div className="px-4 py-2 border-b bg-amber-950/20 border-amber-500/15 flex items-center gap-2">
+              <p className="text-[10px] text-amber-300 font-mono">Connect Glyph to save under your account</p>
+            </div>
           )}
         </div>
       )}

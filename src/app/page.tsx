@@ -8,6 +8,7 @@ import { GalleryPanel } from "@/components/GalleryPanel";
 import { WorldChat } from "@/components/WorldChat";
 import { generateMML, DEMO_MML } from "@/lib/ai";
 import type { Message } from "@/lib/ai";
+import { SetupPanel } from "@/components/SetupPanel";
 import { AlertCircle, Lightbulb, Moon, Sunset, Hammer, LayoutGrid, ChevronDown, ChevronUp } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -103,9 +104,14 @@ export default function Home() {
           </h1>
         </div>
 
-        {/* Right: Wallet + Status */}
-        <div className="flex items-center gap-4">
+        {/* Right: Wallet + Setup + Status */}
+        <div className="flex items-center gap-3">
           <WalletButton />
+          <SetupPanel
+            glyphConnected={glyphConnected}
+            glyphUsername={glyphUsername}
+            walletAddress={walletAddress}
+          />
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             <span className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)]">
@@ -204,7 +210,7 @@ export default function Home() {
                 {codeCollapsed ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
                 <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">MML_OUTPUT.HTML</span>
               </div>
-              <CodeEditorActions code={mmlCode} userId={userId} />
+              <CodeEditorActions code={mmlCode} userId={userId} glyphConnected={glyphConnected} />
             </div>
             {/* Expandable code area */}
             {!codeCollapsed && (
