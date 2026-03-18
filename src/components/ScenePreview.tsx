@@ -291,7 +291,7 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
       scene.fog = new THREE.Fog(0x030306, 15, 40);
       if (ambient) { ambient.color.set(0xffaacc); ambient.intensity = 0.5; }
       if (dirLight) { dirLight.color.set(0x4b7bf5); dirLight.intensity = 0.6; dirLight.position.set(3, 8, 3); }
-      if (fillLight) { fillLight.color.set(0xff8899); fillLight.intensity = 0.35; }
+      if (fillLight) { fillLight.color.set(0x6688ff); fillLight.intensity = 0.4; }
     }
   }, [lighting]);
 
