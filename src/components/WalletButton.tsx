@@ -54,14 +54,17 @@ export function WalletButton() {
     );
   }
 
-  if (authenticated && u?.evmWallet?.address) {
-    const addr = u.evmWallet.address as string;
-    const short = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  if (authenticated && u) {
+    // GlyphWidgetUser: { name, evmWallet (string | {address}), picture, ... }
+    const wallet = typeof u.evmWallet === "string" ? u.evmWallet : u.evmWallet?.address;
+    const shortAddr = wallet ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : null;
+    const label = u.name || shortAddr || "Connected";
+
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--panel-border)] bg-[var(--primary)]/10 text-xs font-mono text-[var(--primary-light)]">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          {short}
+          {label}
         </div>
         <button
           onClick={disconnect}
