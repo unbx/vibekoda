@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { LayoutGrid, Copy, Check, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { LayoutGrid, Copy, Check, ExternalLink, Loader2, RefreshCw, Pencil } from "lucide-react";
 
 interface MMLObject {
   key: string;
@@ -15,6 +15,28 @@ interface MMLObject {
 interface GalleryPanelProps {
   userId: string;
   onLoad: (mmlCode: string) => void;
+}
+
+const NAMES_STORAGE_KEY = "vibekoda_gallery_names";
+
+function loadCustomNames(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(NAMES_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveCustomName(key: string, name: string) {
+  const names = loadCustomNames();
+  names[key] = name;
+  localStorage.setItem(NAMES_STORAGE_KEY, JSON.stringify(names));
+}
+
+function getDisplayName(obj: MMLObject): string {
+  const custom = loadCustomNames()[obj.key];
+  if (custom) return custom;
+  return obj.filename.replace(/\.mml$/, "").replace(/-/g, " ");
 }
 
 function timeAgo(ts: string | null) {
@@ -31,6 +53,9 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   const fetchObjects = useCallback(async () => {
     if (!userId) return;
@@ -69,6 +94,20 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
     }
   };
 
+  const startRename = (obj: MMLObject) => {
+    setEditingKey(obj.key);
+    setEditValue(getDisplayName(obj));
+    setTimeout(() => editInputRef.current?.select(), 50);
+  };
+
+  const commitRename = () => {
+    if (editingKey && editValue.trim()) {
+      saveCustomName(editingKey, editValue.trim());
+    }
+    setEditingKey(null);
+    setEditValue("");
+  };
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -103,14 +142,33 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
         )}
 
         {objects.map((obj) => {
-          const displayName = obj.filename.replace(/\.mml$/, "").replace(/-/g, " ");
+          const displayName = getDisplayName(obj);
+          const isEditing = editingKey === obj.key;
           return (
             <div key={obj.key} className="rounded-xl p-3 border border-white/[0.06] hover:border-[var(--primary)]/30 bg-black/20 transition-all">
               <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <p className="text-xs font-semibold text-white truncate max-w-[200px]" title={displayName}>
-                    {displayName}
-                  </p>
+                <div className="flex-1 min-w-0">
+                  {isEditing ? (
+                    <input
+                      ref={editInputRef}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={commitRename}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename();
+                        if (e.key === "Escape") { setEditingKey(null); setEditValue(""); }
+                      }}
+                      className="w-full text-xs font-semibold text-white bg-white/10 border border-[var(--primary)]/50 rounded px-1.5 py-0.5 outline-none focus:border-[var(--primary)]"
+                      maxLength={80}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-1 group/name cursor-pointer" onClick={() => startRename(obj)}>
+                      <p className="text-xs font-semibold text-white truncate max-w-[180px]" title={`${displayName} — click to rename`}>
+                        {displayName}
+                      </p>
+                      <Pencil className="w-2.5 h-2.5 text-[var(--text-muted)] opacity-0 group-hover/name:opacity-100 transition-opacity shrink-0" />
+                    </div>
+                  )}
                   <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">{timeAgo(obj.uploadedAt)}</p>
                 </div>
               </div>
