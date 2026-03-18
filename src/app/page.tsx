@@ -8,10 +8,14 @@ import { GalleryPanel } from "@/components/GalleryPanel";
 import { WorldChat } from "@/components/WorldChat";
 import { generateMML, DEMO_MML } from "@/lib/ai";
 import type { Message } from "@/lib/ai";
-import { AlertCircle, Sun, Moon, Sunset } from "lucide-react";
+import {
+  AlertCircle, Sun, Moon, Sunset,
+  MessageSquare, Code2, ChevronDown, ChevronUp,
+  Menu, X, Layers, Globe,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 
-// Both loaded client-side only — Glyph SDK has browser-only modules
 const WalletButton = dynamic(
   () => import("@/components/WalletButton").then(m => ({ default: m.WalletButton })),
   { ssr: false, loading: () => null }
@@ -42,11 +46,15 @@ export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
   const userId = walletAddress || localUserId;
 
+  // Panel visibility
+  const [chatOpen, setChatOpen] = useState(true);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const handleWalletAddress = useCallback((addr: string | undefined) => {
     setWalletAddress(addr);
   }, []);
 
-  // Load or create persistent user ID from localStorage (fallback when no wallet)
   useEffect(() => {
     setLocalUserId(generateUserId());
   }, []);
@@ -57,7 +65,7 @@ export default function Home() {
     try {
       const result = await generateMML(messages, apiKey, endpoint, model);
       setMmlCode(result.mmlCode);
-      const description = result.content.replace(/```[\s\S]*?```/g, '').trim();
+      const description = result.content.replace(/```[\s\S]*?```/g, "").trim();
       if ((window as any).__addAssistantMessage) {
         (window as any).__addAssistantMessage(description || "Updated the MML object.");
       }
@@ -73,89 +81,222 @@ export default function Home() {
     setError(null);
   };
 
-  // Called by GalleryPanel when user loads a saved object
   const handleLoadFromGallery = (code: string) => {
     setMmlCode(code);
     setError(null);
   };
 
   return (
-    <main className="flex h-screen w-screen flex-col overflow-hidden bg-[var(--background)]">
+    <main className="relative flex h-screen w-screen flex-col overflow-hidden bg-[var(--background)]">
 
-      {/* Header */}
-      <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black/20 z-10 w-full shrink-0">
-        <div className="flex items-center gap-3">
-          <img src="/Hapa-head-emoji.png" alt="VibeKoda" className="w-8 h-8 rounded-lg object-cover shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
-          <h1 className="text-lg font-bold tracking-widest text-glow">
-            VIBEKODA <span className="text-purple-400">STUDIO</span>
+      {/* ═══════ HEADER — Otherside minimal nav ═══════ */}
+      <header className="relative z-40 h-14 flex items-center justify-between px-5 border-b border-white/[0.06] bg-[var(--background)]/80 backdrop-blur-xl shrink-0">
+        {/* Left: Menu + tools */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-white transition-colors"
+          >
+            {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            <span className="font-display-light text-[11px] tracking-[0.2em]">MENU</span>
+          </button>
+        </div>
+
+        {/* Center: Logo */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5">
+          <img
+            src="/Hapa-head-emoji.png"
+            alt="VibeKoda"
+            className="w-7 h-7 rounded-md object-cover animate-pulse-glow"
+          />
+          <h1 className="font-display text-sm tracking-[0.15em] text-white">
+            VIBEKODA<span className="text-[var(--primary-light)] ml-1">STUDIO</span>
           </h1>
         </div>
+
+        {/* Right: Wallet */}
         <div className="flex items-center gap-3">
           <WalletButton />
-          <div className="text-xs text-gray-500 font-mono flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            AGENT_MODE: ACTIVE
-          </div>
         </div>
       </header>
 
-      {/* Main Workspace */}
-      <div className="flex flex-1 p-4 gap-4 overflow-hidden">
+      {/* ═══════ MAIN CANVAS AREA ═══════ */}
+      <div className="relative flex-1 overflow-hidden">
 
-        {/* Left Pane - Generator */}
-        <section className="w-1/3 min-w-[350px] max-w-sm shrink-0 flex flex-col overflow-hidden rounded-2xl border border-white/5 bg-black/10 backdrop-blur-xl">
-          <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
-        </section>
+        {/* Full-screen 3D Preview */}
+        <div className="absolute inset-0">
+          <ScenePreview mmlCode={mmlCode} lighting={lighting} />
+        </div>
 
-        {/* Right Pane - Editor & Preview */}
-        <section className="flex-1 flex flex-col gap-4 overflow-hidden min-w-0">
+        {/* ─── Lighting Controls (top-right overlay) ─── */}
+        <div className="absolute top-4 right-4 z-20 flex gap-1 bg-[var(--panel-bg)] backdrop-blur-xl px-2 py-1.5 rounded-full border border-[var(--panel-border)]">
+          {([
+            { key: "studio" as const, icon: Sun, label: "Studio" },
+            { key: "sunset" as const, icon: Sunset, label: "Sunset" },
+            { key: "night" as const, icon: Moon, label: "Night" },
+          ]).map(({ key, icon: Icon, label }) => (
+            <button
+              key={key}
+              onClick={() => setLighting(key)}
+              className={`p-2 rounded-full transition-all ${
+                lighting === key
+                  ? "bg-[var(--primary)]/30 text-white"
+                  : "hover:bg-white/5 text-[var(--text-muted)]"
+              }`}
+              title={`${label} Lighting`}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          ))}
+        </div>
 
-          {/* Top Half - Live 3D Preview */}
-          <div className="flex-[3] relative rounded-2xl border border-white/5 bg-gradient-to-b from-[#0a0a0f] to-[#030308] overflow-hidden">
-            <ScenePreview mmlCode={mmlCode} lighting={lighting} />
+        {/* ─── Panel Toggle Buttons (top-left overlay) ─── */}
+        <div className="absolute top-4 left-4 z-20 flex gap-2">
+          <button
+            onClick={() => setChatOpen(!chatOpen)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-all backdrop-blur-xl ${
+              chatOpen
+                ? "bg-[var(--primary)]/20 border-[var(--primary)]/30 text-white"
+                : "bg-[var(--panel-bg)] border-[var(--panel-border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--primary)]/30"
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span className="font-display-light text-[10px] tracking-[0.15em]">BUILDER</span>
+          </button>
+          <button
+            onClick={() => setCodeOpen(!codeOpen)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-all backdrop-blur-xl ${
+              codeOpen
+                ? "bg-[var(--primary)]/20 border-[var(--primary)]/30 text-white"
+                : "bg-[var(--panel-bg)] border-[var(--panel-border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--primary)]/30"
+            }`}
+          >
+            <Code2 className="w-3.5 h-3.5" />
+            <span className="font-display-light text-[10px] tracking-[0.15em]">CODE</span>
+          </button>
+        </div>
 
-            {/* Lighting Presets */}
-            <div className="absolute top-4 right-4 z-10 flex gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/10">
-              <button
-                onClick={() => setLighting("studio")}
-                className={`p-1.5 rounded-md transition-all ${lighting === "studio" ? "bg-purple-600/50 text-white" : "hover:bg-white/10 text-gray-400"}`}
-                title="Studio Lighting"
-              >
-                <Sun className="w-4 h-4" />
+        {/* ─── Error Toast ─── */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 bg-red-950/80 border border-red-500/30 p-4 rounded-2xl flex items-center gap-3 backdrop-blur-xl max-w-md shadow-[0_0_40px_rgba(239,68,68,0.15)]"
+            >
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+              <p className="text-red-200 text-sm">{error}</p>
+              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-2">
+                <X className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => setLighting("sunset")}
-                className={`p-1.5 rounded-md transition-all ${lighting === "sunset" ? "bg-orange-600/50 text-white" : "hover:bg-white/10 text-gray-400"}`}
-                title="Sunset Lighting"
-              >
-                <Sunset className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setLighting("night")}
-                className={`p-1.5 rounded-md transition-all ${lighting === "night" ? "bg-blue-600/50 text-white" : "hover:bg-white/10 text-gray-400"}`}
-                title="Night Lighting"
-              >
-                <Moon className="w-4 h-4" />
-              </button>
-            </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            {error && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-red-950/80 border border-red-500/50 p-4 rounded-xl flex items-center gap-3 backdrop-blur-xl w-[90%] max-w-md shadow-[0_0_50px_rgba(239,68,68,0.2)]">
-                <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
-                <p className="text-red-200 text-sm">{error}</p>
+        {/* ═══════ CHAT PANEL — Left overlay ═══════ */}
+        <AnimatePresence>
+          {chatOpen && (
+            <motion.div
+              initial={{ x: -400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -400, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="absolute top-0 left-0 bottom-0 z-30 w-[380px] max-w-[85vw] flex flex-col"
+            >
+              <div className="m-3 mt-14 mb-3 flex-1 flex flex-col overflow-hidden rounded-2xl glass-panel">
+                <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
               </div>
-            )}
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          {/* Bottom Half - Source Code */}
-          <div className="flex-[2] min-h-0">
-            <CodeEditor code={mmlCode} onChange={setMmlCode} userId={userId} />
-          </div>
+        {/* ═══════ CODE PANEL — Bottom slide-up ═══════ */}
+        <AnimatePresence>
+          {codeOpen && (
+            <motion.div
+              initial={{ y: 400, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 400, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 z-30 h-[45%] max-h-[400px]"
+            >
+              <div className="mx-3 mb-3 h-full flex flex-col rounded-2xl glass-panel overflow-hidden">
+                {/* Code panel drag handle */}
+                <div className="flex items-center justify-center py-1.5 cursor-pointer" onClick={() => setCodeOpen(false)}>
+                  <div className="w-10 h-1 rounded-full bg-white/10" />
+                </div>
+                <CodeEditor code={mmlCode} onChange={setMmlCode} userId={userId} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        </section>
+        {/* ═══════ MENU DROPDOWN ═══════ */}
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-0 left-0 z-50 m-3 mt-2 glass-panel rounded-2xl p-2 min-w-[200px]"
+            >
+              <button
+                onClick={() => { setChatOpen(!chatOpen); setMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span className="font-display-light text-[11px] tracking-[0.12em]">{chatOpen ? "HIDE BUILDER" : "SHOW BUILDER"}</span>
+              </button>
+              <button
+                onClick={() => { setCodeOpen(!codeOpen); setMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all"
+              >
+                <Code2 className="w-4 h-4" />
+                <span className="font-display-light text-[11px] tracking-[0.12em]">{codeOpen ? "HIDE CODE" : "SHOW CODE"}</span>
+              </button>
+              <div className="h-px bg-white/5 my-1" />
+              <button
+                onClick={() => { setMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all"
+              >
+                <Layers className="w-4 h-4" />
+                <span className="font-display-light text-[11px] tracking-[0.12em]">GALLERY</span>
+              </button>
+              <button
+                onClick={() => { setMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 transition-all"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="font-display-light text-[11px] tracking-[0.12em]">WORLD CHAT</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Side Panels */}
+      {/* ═══════ BOTTOM BAR — Otherside style ═══════ */}
+      <footer className="relative z-40 h-10 flex items-center justify-center gap-3 border-t border-white/[0.06] bg-[var(--background)]/80 backdrop-blur-xl shrink-0">
+        <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--text-muted)]">
+          CURRENTLY VIEWING:
+        </span>
+        <div className="flex gap-1.5">
+          <span className="btn-otherside text-[10px] px-4 py-1 tracking-[0.15em]">
+            STUDIO
+          </span>
+          <button className="btn-otherside-outline text-[10px] px-4 py-1 tracking-[0.15em]">
+            GALLERY
+          </button>
+        </div>
+        <div className="absolute right-4 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          <span className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)]">
+            AGENT ACTIVE
+          </span>
+        </div>
+      </footer>
+
+      {/* Hidden helpers */}
       <GlyphUserSync onAddress={handleWalletAddress} />
       <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
       <WorldChat currentMmlDescription={mmlCode} />

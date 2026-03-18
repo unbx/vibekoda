@@ -1,12 +1,35 @@
 @import "tailwindcss";
 
+/* ─── Otherside Brand Tokens ─── */
 :root {
-  --background: #030308;
-  --foreground: #f3f4f6;
-  --primary: #8b5cf6;
-  --primary-glow: rgba(139, 92, 246, 0.5);
-  --panel-bg: rgba(25, 25, 35, 0.4);
-  --panel-border: rgba(255, 255, 255, 0.08);
+  --background: #060608;
+  --foreground: #e8e4ef;
+  --primary: #7B6CF6;
+  --primary-light: #9B8DF5;
+  --primary-dark: #5A4DD4;
+  --primary-glow: rgba(123, 108, 246, 0.4);
+  --accent-pink: #E84BF5;
+  --accent-pink-glow: rgba(232, 75, 245, 0.3);
+  --accent-blue: #4B7BF5;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9B8DA0;
+  --text-muted: #5A4F6A;
+  --panel-bg: rgba(12, 10, 20, 0.88);
+  --panel-border: rgba(123, 108, 246, 0.12);
+  --surface: rgba(20, 16, 35, 0.6);
+}
+
+/* ─── Top Gradient Line (Otherside signature) ─── */
+html::before {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #E84BF5, #7B6CF6, #4B7BF5, #7B6CF6, #E84BF5);
+  z-index: 9999;
 }
 
 body {
@@ -15,33 +38,128 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
   overflow: hidden;
-  background-image: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15), transparent 50%);
 }
 
+/* ─── Display Font (Otherside geometric/blocky headlines) ─── */
+.font-display {
+  font-family: 'Chakra Petch', 'Rajdhani', 'Orbitron', system-ui, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.font-display-light {
+  font-family: 'Chakra Petch', 'Rajdhani', system-ui, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+/* ─── Glass Panels ─── */
 .glass-panel {
   background: var(--panel-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--panel-border);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
+/* ─── Text Glow ─── */
 .text-glow {
-  text-shadow: 0 0 20px var(--primary-glow);
+  text-shadow: 0 0 24px var(--primary-glow);
 }
 
-/* Custom Scrollbar */
+.text-glow-pink {
+  text-shadow: 0 0 24px var(--accent-pink-glow);
+}
+
+/* ─── Portal Glow (for accent elements) ─── */
+.portal-glow {
+  box-shadow: 0 0 40px var(--accent-pink-glow), 0 0 80px rgba(123, 108, 246, 0.15);
+}
+
+/* ─── Otherside Button ─── */
+.btn-otherside {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-family: 'Chakra Petch', 'Rajdhani', system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-otherside:hover {
+  background: var(--primary-light);
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.btn-otherside:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-otherside-outline {
+  background: transparent;
+  color: var(--primary-light);
+  border: 1px solid var(--panel-border);
+  border-radius: 9999px;
+  font-family: 'Chakra Petch', 'Rajdhani', system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-otherside-outline:hover {
+  border-color: var(--primary);
+  background: rgba(123, 108, 246, 0.1);
+}
+
+/* ─── Custom Scrollbar ─── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(123, 108, 246, 0.2);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(123, 108, 246, 0.4);
+}
+
+/* ─── Diamond Decoration (Otherside motif) ─── */
+.diamond-icon::before {
+  content: "◆";
+  display: inline-block;
+  font-size: 0.6em;
+  color: var(--primary-light);
+  margin-right: 0.5em;
+}
+
+/* ─── Animations ─── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--primary-glow); }
+  50% { box-shadow: 0 0 40px var(--primary-glow), 0 0 60px var(--accent-pink-glow); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
 }

@@ -38,10 +38,10 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
     if (!containerRef.current) return;
     const container = containerRef.current;
 
-    // Scene
+    // Scene — Otherside dark void
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0f);
-    scene.fog = new THREE.Fog(0x0a0a0f, 20, 50);
+    scene.background = new THREE.Color(0x060608);
+    scene.fog = new THREE.Fog(0x060608, 25, 60);
     sceneRef.current = scene;
 
     // Camera
@@ -68,8 +68,8 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
     controls.target.set(0, 1, 0);
     controlsRef.current = controls;
 
-    // Ground grid
-    const gridHelper = new THREE.GridHelper(20, 20, 0x222233, 0x111122);
+    // Ground grid — subtle Otherside purple tint
+    const gridHelper = new THREE.GridHelper(30, 30, 0x1a1530, 0x0d0a1a);
     scene.add(gridHelper);
 
     // Ambient light
@@ -134,23 +134,26 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
     const fillLight = scene.getObjectByName("__fillLight") as THREE.DirectionalLight | undefined;
 
     if (lighting === "studio") {
-      scene.background = new THREE.Color(0xc8d8e8);
-      scene.fog = new THREE.Fog(0xc8d8e8, 25, 60);
-      if (ambient) { ambient.color.set(0xffffff); ambient.intensity = 1.2; }
+      // Otherside studio: soft purple-tinted lighting
+      scene.background = new THREE.Color(0x0c0a18);
+      scene.fog = new THREE.Fog(0x0c0a18, 25, 60);
+      if (ambient) { ambient.color.set(0xe8e0ff); ambient.intensity = 1.0; }
       if (dirLight) { dirLight.color.set(0xffffff); dirLight.intensity = 1.5; dirLight.position.set(5, 10, 5); }
-      if (fillLight) { fillLight.color.set(0x8888ff); fillLight.intensity = 0.4; }
+      if (fillLight) { fillLight.color.set(0x7b6cf6); fillLight.intensity = 0.3; }
     } else if (lighting === "sunset") {
-      scene.background = new THREE.Color(0x1a0a05);
-      scene.fog = new THREE.Fog(0x1a0a05, 20, 50);
-      if (ambient) { ambient.color.set(0xffccaa); ambient.intensity = 1.0; }
-      if (dirLight) { dirLight.color.set(0xff8844); dirLight.intensity = 2.0; dirLight.position.set(-5, 3, 2); }
-      if (fillLight) { fillLight.color.set(0xff4400); fillLight.intensity = 0.6; }
+      // Portal glow: warm pinks and purples
+      scene.background = new THREE.Color(0x120810);
+      scene.fog = new THREE.Fog(0x120810, 20, 50);
+      if (ambient) { ambient.color.set(0xffccdd); ambient.intensity = 0.8; }
+      if (dirLight) { dirLight.color.set(0xe84bf5); dirLight.intensity = 1.8; dirLight.position.set(-5, 3, 2); }
+      if (fillLight) { fillLight.color.set(0xff6644); fillLight.intensity = 0.5; }
     } else if (lighting === "night") {
-      scene.background = new THREE.Color(0x020208);
-      scene.fog = new THREE.Fog(0x020208, 15, 40);
-      if (ambient) { ambient.color.set(0x4444aa); ambient.intensity = 0.3; }
-      if (dirLight) { dirLight.color.set(0x6666cc); dirLight.intensity = 0.5; dirLight.position.set(3, 8, 3); }
-      if (fillLight) { fillLight.color.set(0x2222aa); fillLight.intensity = 0.2; }
+      // Deep void: Otherside darkness
+      scene.background = new THREE.Color(0x030306);
+      scene.fog = new THREE.Fog(0x030306, 15, 40);
+      if (ambient) { ambient.color.set(0x3333aa); ambient.intensity = 0.25; }
+      if (dirLight) { dirLight.color.set(0x4b7bf5); dirLight.intensity = 0.4; dirLight.position.set(3, 8, 3); }
+      if (fillLight) { fillLight.color.set(0x1a1155); fillLight.intensity = 0.15; }
     }
   }, [lighting]);
 
@@ -338,12 +341,8 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
-      <div className="absolute top-4 left-4 z-10 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-md border border-white/10 flex items-center gap-2 shadow-lg">
-        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-        <span className="text-xs font-mono text-purple-300">LIVE 3D PREVIEW</span>
-      </div>
-      <div className="absolute bottom-4 right-4 z-10 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-md border border-white/5">
-        <span className="text-[10px] font-mono text-gray-500">Drag to rotate · Scroll to zoom</span>
+      <div className="absolute bottom-5 right-5 z-10 bg-[var(--panel-bg)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--panel-border)]">
+        <span className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)]">DRAG TO ROTATE · SCROLL TO ZOOM</span>
       </div>
     </div>
   );
