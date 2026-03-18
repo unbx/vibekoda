@@ -216,7 +216,8 @@ export default function Home() {
             <div className="relative flex items-center justify-between px-4 py-2.5 shrink-0 cursor-pointer hover:bg-white/[0.02] transition-colors" onClick={() => setCodeCollapsed(c => !c)}>
               <div className="flex items-center gap-2">
                 {codeCollapsed ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
-                <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">MML_OUTPUT.HTML</span>
+                <span className="font-mono text-[10px] text-[var(--text-muted)] opacity-60">&lt;/&gt;</span>
+                <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">MML CODE</span>
               </div>
               <CodeEditorActions code={mmlCode} userId={userId} glyphConnected={glyphConnected} />
             </div>
