@@ -42,7 +42,7 @@ export function SharePageClient({ s3Url, displayName, mmlKey }: Props) {
     <main className="min-h-screen bg-[#08080f] text-white">
       {/* Header */}
       <header className="border-b border-white/10 px-6 py-4 flex items-center gap-3">
-        <Image src="/Hapa-head-emoji.png" alt="VibeKoda" width={32} height={32} className="rounded-lg" />
+        <Image src="/Hapa-head-emoji.png" alt="Hapa" width={32} height={32} className="rounded-lg" />
         <span className="text-sm font-bold tracking-widest">VIBEKODA <span className="text-purple-400">STUDIO</span></span>
         <a href="/" className="ml-auto text-xs text-gray-600 hover:text-purple-400 transition-colors">← Open Studio</a>
       </header>

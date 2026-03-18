@@ -30,33 +30,124 @@ function saveAiSettings(settings: { provider: string; apiKey: string; endpoint: 
   localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(settings));
 }
 
-const LOADING_QUIPS = [
-  "Summoning Kodas from the cosmic void...",
-  "Mining Chlorocite in the northern biomes...",
-  "Channeling the Obelisk's energy...",
-  "Convincing a Shade to possess this Vessel...",
-  "Wading through the Biogenic Swamp...",
-  "Decoding ancient MML glyphs...",
-  "Asking a Kodamara for creative advice...",
+// Hapa's general loading quips — sarcastic, lore-infused, chaotic
+const GENERAL_QUIPS = [
+  "Ugh, cubes again. Hold on, I'll make them beautiful...",
+  "Building with MML is like sculpting with oven mitts on...",
+  "One sec, channeling the Obelisk... it's being dramatic today",
+  "Mining Chlorocite in the northern biomes... for you",
+  "Convincing a Shade to possess this Vessel rq...",
+  "Wading through the Biogenic Swamp in heels...",
+  "Look, I didn't choose MML. MML chose me.",
   "Harvesting Moldium shards... careful, they bite",
-  "Navigating the Chemical Goo... it's sticky",
-  "Enchanting your object with Rainbow Atmos dust...",
-  "Bribing a Koda with Magic Powder...",
-  "Warping through the Infinite Expanse...",
-  "Tuning into the Nexus frequency...",
-  "A Vessel just landed on your Otherdeed...",
-  "Rolling for initiative in the Swamp...",
-  "Sprinkling some Cosmic Dream seasoning...",
-  "Teaching a Mara how to vibe...",
-  "Downloading vibes from the Otherside...",
-  "Consulting the ancient Voyager scrolls...",
+  "Navigating the Chemical Goo... it's sticky and I'm upset",
+  "Bribing a Koda with Magic Powder... don't tell anyone",
+  "Hold on, my farts are distracting me. They smell like Gucci tho",
+  "Warping through the Infinite Expanse... it's very expansive",
+  "I'm literally the best at this. Just give me a sec.",
+  "Sprinkling Cosmic Dream dust on these primitive shapes...",
+  "Teaching a Mara how to vibe... it's going okay",
+  "Downloading vibes directly from the Otherside mainframe...",
   "Your Koda is thinking really hard rn...",
-  "Farming XP in the Nexus... almost done",
-  "Distilling pure Sulfuric essence...",
-  "The Obelisk hums... something approaches...",
-  "Brewing a catalyst for your creation...",
-  "A wild Enchanter appears! They're helping...",
+  "The Obelisk hums... something magnificent approaches...",
+  "Brewing a catalyst... MML, you will bend to my will",
+  "A wild Enchanter showed up. They're watching me cook.",
+  "Farming XP in the Nexus while I build this... multitasking queen",
+  "Distilling pure Sulfuric essence into art...",
+  "I swear if this cube renders wrong I'm filing a complaint",
+  "Rolling for initiative in the Swamp... nat 20, let's go",
+  "This would be so much easier with real tools. But here we are.",
+  "Consulting the ancient Voyager scrolls... they're dusty",
+  "Making MML do things its inventors never imagined...",
+  "You bring the vision, I bring the chaos. Perfect combo.",
+  "Primitive shapes? Please. Watch me turn cubes into poetry.",
+  "The Nexus called. They want to know how I'm this good.",
 ];
+
+// Context-aware quips based on what the user asked for
+const CONTEXT_QUIPS: Record<string, string[]> = {
+  portal: [
+    "Spinning up a portal... hope you have insurance",
+    "Ripping a hole in the Otherside fabric... for aesthetics",
+    "Portals are just fancy donuts. Fight me.",
+  ],
+  castle: [
+    "Building a castle out of cubes. This is my villain origin story.",
+    "Every Koda deserves a castle. Even primitive ones.",
+    "Stacking cubes until they look royal... somehow",
+  ],
+  house: [
+    "MML houses: zero plumbing, infinite vibes",
+    "Building walls out of cubes. Interior design on hard mode.",
+    "A house in the Otherside doesn't need a door. But I'll add one.",
+  ],
+  tree: [
+    "Growing a tree from cylinders and spheres. Nature is healing.",
+    "Trees in MML: 100% organic, 0% polygons... wait",
+    "Branching out... literally. Get it? I'll stop.",
+  ],
+  car: [
+    "Building a car with no engine. Welcome to the metaverse.",
+    "Vroom vroom... it's cubes on cylinders but trust the process",
+    "Fastest MML car in the Otherside. It doesn't move but still.",
+  ],
+  robot: [
+    "Building a robot from cubes. We are not so different, it and I.",
+    "Beep boop... assembling your mechanical friend",
+    "This robot's gonna be cute. Cubes are always cute.",
+  ],
+  light: [
+    "Let there be m-light! ...intensity 3, distance 8",
+    "Adding the glow. The vibes are about to SHIFT.",
+    "Lighting this up like a Cosmic Dream rave...",
+  ],
+  water: [
+    "Making water out of flat planes. Yep. That's MML for you.",
+    "Simulating water with cubes... just go with it",
+    "The Biogenic Swamp called, they want their vibe back",
+  ],
+  fire: [
+    "Playing with fire... spheres and orange cubes. Close enough.",
+    "Burning things in MML is just cubes with attitude",
+    "If my Gucci-scented farts catch fire we're all done",
+  ],
+  animal: [
+    "Building an animal from cubes. I'm basically a digital vet.",
+    "Cute creature incoming... it's made of primitives and love",
+    "Kodas are the best animals. But I'll build yours too.",
+  ],
+  space: [
+    "Going to space with MML... no oxygen needed",
+    "Stars are just tiny spheres with emissive=1. I said what I said.",
+    "Houston, we have cubes.",
+  ],
+  glow: [
+    "Cranking up the emissive... your retinas are not my problem",
+    "Glow mode activated. The Nexus is jealous.",
+    "If it doesn't glow, does it even belong in the Otherside?",
+  ],
+};
+
+function pickQuip(userPrompt: string): string {
+  // Check for context matches
+  const lower = userPrompt.toLowerCase();
+  const matchedContexts: string[] = [];
+  for (const [keyword, quips] of Object.entries(CONTEXT_QUIPS)) {
+    if (lower.includes(keyword)) {
+      matchedContexts.push(...quips);
+    }
+  }
+  // 60% chance to use context quip if available, 40% general
+  if (matchedContexts.length > 0 && Math.random() < 0.6) {
+    return matchedContexts[Math.floor(Math.random() * matchedContexts.length)];
+  }
+  return GENERAL_QUIPS[Math.floor(Math.random() * GENERAL_QUIPS.length)];
+}
+
+function randomInterval(): number {
+  // Random timing between 2.5s and 5s
+  return 2500 + Math.floor(Math.random() * 2500);
+}
 
 export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInterfaceProps) {
   const [prompt, setPrompt] = useState("");
@@ -71,15 +162,23 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [loadingQuip, setLoadingQuip] = useState("");
+  const [lastUserPrompt, setLastUserPrompt] = useState("");
 
-  // Rotate loading quips while generating
+  // Rotate loading quips while generating — context-aware with random timing
   useEffect(() => {
     if (!isGenerating) return;
-    const pick = () => LOADING_QUIPS[Math.floor(Math.random() * LOADING_QUIPS.length)];
-    setLoadingQuip(pick());
-    const interval = setInterval(() => setLoadingQuip(pick()), 3500);
-    return () => clearInterval(interval);
-  }, [isGenerating]);
+    setLoadingQuip(pickQuip(lastUserPrompt));
+
+    let timeout: NodeJS.Timeout;
+    const scheduleNext = () => {
+      timeout = setTimeout(() => {
+        setLoadingQuip(pickQuip(lastUserPrompt));
+        scheduleNext();
+      }, randomInterval());
+    };
+    scheduleNext();
+    return () => clearTimeout(timeout);
+  }, [isGenerating, lastUserPrompt]);
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -137,6 +236,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
 
     setShowApiNudge(false);
     const userMessage = prompt.trim();
+    setLastUserPrompt(userMessage);
     setPrompt("");
     setChatHistory(prev => [...prev, { role: "user", text: userMessage }]);
     const newMessages: Message[] = [...messageHistory, { role: "user", content: userMessage }];
@@ -280,12 +380,12 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
         {chatHistory.length === 0 && (
           <div className="p-5 rounded-2xl bg-[var(--surface)] border border-[var(--panel-border)] rounded-tl-sm">
             <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 animate-pulse-glow mb-3">
-              <img src="/Hapa-head-emoji.png" alt="VibeKoda" className="w-full h-full object-cover" />
+              <img src="/Hapa-head-emoji.png" alt="Hapa" className="w-full h-full object-cover" />
             </div>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Hey creator! I&apos;m your <span className="text-[var(--primary-light)] font-semibold text-glow">VibeKoda</span>
+              Yo. I&apos;m <span className="text-[var(--primary-light)] font-semibold text-glow">Hapa</span> — mysterious Koda, master world builder, and yes, I build entire worlds out of primitive cubes. Don&apos;t judge me, judge the results. 🔮
               <br /><br />
-              Tell me what you want to build for the Otherside and I&apos;ll craft the MML. Keep chatting to refine it — I&apos;ll remember everything. Hit <span className="text-[var(--primary-light)] font-medium">New</span> when you&apos;re ready for something fresh.
+              Tell me what you want to build and I&apos;ll make MML do things it wasn&apos;t designed to do. Keep chatting to refine — I remember everything. Hit <span className="text-[var(--primary-light)] font-medium">New</span> when you&apos;re ready for something fresh.
             </p>
           </div>
         )}
@@ -299,7 +399,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
           >
             {msg.role === "assistant" && (
               <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 mt-1 animate-pulse-glow">
-                <img src="/Hapa-head-emoji.png" alt="VibeKoda" className="w-full h-full object-cover" />
+                <img src="/Hapa-head-emoji.png" alt="Hapa" className="w-full h-full object-cover" />
               </div>
             )}
             <div
@@ -322,7 +422,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
         {isGenerating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-2">
             <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 mt-1 animate-pulse-glow">
-              <img src="/Hapa-head-emoji.png" alt="VibeKoda" className="w-full h-full object-cover" />
+              <img src="/Hapa-head-emoji.png" alt="Hapa" className="w-full h-full object-cover" />
             </div>
             <div className="bg-[var(--surface)] border border-[var(--panel-border)] px-4 py-2.5 rounded-2xl rounded-bl-sm flex items-center gap-2.5 max-w-[85%]">
               <Loader2 className="w-4 h-4 text-[var(--primary)] animate-spin shrink-0" />

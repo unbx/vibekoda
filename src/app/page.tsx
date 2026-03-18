@@ -101,7 +101,7 @@ export default function Home() {
         <div className="flex items-center gap-2.5">
           <img
             src="/Hapa-head-emoji.png"
-            alt="VibeKoda"
+            alt="Hapa"
             className="w-7 h-7 rounded-md object-cover animate-pulse-glow"
           />
           <h1 className="font-display text-sm tracking-[0.15em] text-white">

@@ -103,7 +103,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
     setMessages([]);
   };
 
-  const broadcastName = glyphUsername || "VibeKoda";
+  const broadcastName = glyphUsername || "Hapa";
 
   const handleBroadcast = async () => {
     const msg = broadcastMsg.trim();
