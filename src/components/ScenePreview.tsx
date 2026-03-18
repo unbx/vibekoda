@@ -635,26 +635,26 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
-      <div className="absolute bottom-5 right-5 z-10 bg-[var(--panel-bg)]/80 backdrop-blur-xl rounded-xl border border-[var(--panel-border)] p-3 flex flex-col gap-2">
+      <div className="absolute bottom-5 right-5 z-10 bg-black/70 backdrop-blur-xl rounded-xl border border-white/10 p-3 flex flex-col gap-2">
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
-            <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/[0.08] text-[9px] font-mono text-[var(--text-muted)] leading-none">W</kbd>
-            <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/[0.08] text-[9px] font-mono text-[var(--text-muted)] leading-none">A</kbd>
-            <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/[0.08] text-[9px] font-mono text-[var(--text-muted)] leading-none">S</kbd>
-            <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/[0.08] text-[9px] font-mono text-[var(--text-muted)] leading-none">D</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white/15 border border-white/20 text-[9px] font-mono text-white/70 leading-none">W</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white/15 border border-white/20 text-[9px] font-mono text-white/70 leading-none">A</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white/15 border border-white/20 text-[9px] font-mono text-white/70 leading-none">S</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white/15 border border-white/20 text-[9px] font-mono text-white/70 leading-none">D</kbd>
           </div>
-          <span className="text-[9px] tracking-wide text-[var(--text-muted)] font-display-light">MOVE</span>
+          <span className="text-[9px] tracking-wide text-white/50 font-display-light">MOVE</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
-            <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/[0.08] text-[9px] font-mono text-[var(--text-muted)] leading-none">Q</kbd>
-            <kbd className="px-1.5 py-0.5 rounded bg-white/10 border border-white/[0.08] text-[9px] font-mono text-[var(--text-muted)] leading-none">E</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white/15 border border-white/20 text-[9px] font-mono text-white/70 leading-none">Q</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-white/15 border border-white/20 text-[9px] font-mono text-white/70 leading-none">E</kbd>
           </div>
-          <span className="text-[9px] tracking-wide text-[var(--text-muted)] font-display-light">UP / DOWN</span>
+          <span className="text-[9px] tracking-wide text-white/50 font-display-light">UP / DOWN</span>
         </div>
-        <div className="h-px bg-white/[0.06]" />
+        <div className="h-px bg-white/10" />
         <div className="flex items-center gap-2">
-          <span className="text-[9px] tracking-wide text-[var(--text-muted)] font-display-light">DRAG TO ROTATE · SCROLL TO ZOOM</span>
+          <span className="text-[9px] tracking-wide text-white/50 font-display-light">DRAG TO ROTATE · SCROLL TO ZOOM</span>
         </div>
       </div>
     </div>
