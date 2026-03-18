@@ -30,6 +30,34 @@ function saveAiSettings(settings: { provider: string; apiKey: string; endpoint: 
   localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(settings));
 }
 
+const LOADING_QUIPS = [
+  "Summoning Kodas from the cosmic void...",
+  "Mining Chlorocite in the northern biomes...",
+  "Channeling the Obelisk's energy...",
+  "Convincing a Shade to possess this Vessel...",
+  "Wading through the Biogenic Swamp...",
+  "Decoding ancient MML glyphs...",
+  "Asking a Kodamara for creative advice...",
+  "Harvesting Moldium shards... careful, they bite",
+  "Navigating the Chemical Goo... it's sticky",
+  "Enchanting your object with Rainbow Atmos dust...",
+  "Bribing a Koda with Magic Powder...",
+  "Warping through the Infinite Expanse...",
+  "Tuning into the Nexus frequency...",
+  "A Vessel just landed on your Otherdeed...",
+  "Rolling for initiative in the Swamp...",
+  "Sprinkling some Cosmic Dream seasoning...",
+  "Teaching a Mara how to vibe...",
+  "Downloading vibes from the Otherside...",
+  "Consulting the ancient Voyager scrolls...",
+  "Your Koda is thinking really hard rn...",
+  "Farming XP in the Nexus... almost done",
+  "Distilling pure Sulfuric essence...",
+  "The Obelisk hums... something approaches...",
+  "Brewing a catalyst for your creation...",
+  "A wild Enchanter appears! They're helping...",
+];
+
 export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInterfaceProps) {
   const [prompt, setPrompt] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -42,6 +70,16 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
   const [messageHistory, setMessageHistory] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [loadingQuip, setLoadingQuip] = useState("");
+
+  // Rotate loading quips while generating
+  useEffect(() => {
+    if (!isGenerating) return;
+    const pick = () => LOADING_QUIPS[Math.floor(Math.random() * LOADING_QUIPS.length)];
+    setLoadingQuip(pick());
+    const interval = setInterval(() => setLoadingQuip(pick()), 3500);
+    return () => clearInterval(interval);
+  }, [isGenerating]);
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -282,12 +320,21 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
         ))}
 
         {isGenerating && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 animate-pulse-glow">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-2">
+            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 mt-1 animate-pulse-glow">
               <img src="/Hapa-head-emoji.png" alt="VibeKoda" className="w-full h-full object-cover" />
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--panel-border)] px-4 py-2.5 rounded-2xl rounded-bl-sm">
-              <Loader2 className="w-4 h-4 text-[var(--primary)] animate-spin" />
+            <div className="bg-[var(--surface)] border border-[var(--panel-border)] px-4 py-2.5 rounded-2xl rounded-bl-sm flex items-center gap-2.5 max-w-[85%]">
+              <Loader2 className="w-4 h-4 text-[var(--primary)] animate-spin shrink-0" />
+              <motion.span
+                key={loadingQuip}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-xs text-[var(--text-secondary)] italic"
+              >
+                {loadingQuip}
+              </motion.span>
             </div>
           </motion.div>
         )}
