@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useGlyph, useNativeGlyphConnection } from "@use-glyph/sdk-react";
-import { Wallet, LogOut, Loader2 } from "lucide-react";
+import { Wallet, LogOut, Loader2, AlertTriangle } from "lucide-react";
 
 export function WalletButton() {
   const { user, authenticated, ready } = useGlyph();
   const { connect, disconnect } = useNativeGlyphConnection();
   const [timedOut, setTimedOut] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   // Glyph SDK v2 types are loose — cast user to access wallet fields
   const u = user as any;
@@ -19,7 +21,24 @@ export function WalletButton() {
     return () => clearTimeout(timer);
   }, [ready]);
 
-  // Show loading only briefly — then fall through to connect button
+  const handleConnect = useCallback(async () => {
+    setPopupBlocked(false);
+    setConnecting(true);
+    try {
+      await connect();
+    } catch (err: any) {
+      // Detect popup blocker — the error message varies by browser
+      const msg = err?.message?.toLowerCase() || "";
+      if (msg.includes("popup") || msg.includes("blocked") || msg.includes("denied")) {
+        setPopupBlocked(true);
+      }
+      console.warn("[Glyph] Connect error:", err);
+    } finally {
+      setConnecting(false);
+    }
+  }, [connect]);
+
+  // Show loading only briefly
   if (!ready && !timedOut) {
     return (
       <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs font-mono">
@@ -50,12 +69,25 @@ export function WalletButton() {
   }
 
   return (
-    <button
-      onClick={connect}
-      className="btn-otherside-outline flex items-center gap-2 px-4 py-1.5 text-[10px] tracking-[0.12em]"
-    >
-      <Wallet className="w-3.5 h-3.5" />
-      CONNECT GLYPH
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleConnect}
+        disabled={connecting}
+        className="btn-otherside-outline flex items-center gap-2 px-4 py-1.5 text-[10px] tracking-[0.12em]"
+      >
+        {connecting ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Wallet className="w-3.5 h-3.5" />
+        )}
+        {connecting ? "CONNECTING..." : "CONNECT GLYPH"}
+      </button>
+      {popupBlocked && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-950/50 border border-amber-500/20 text-[10px] text-amber-300">
+          <AlertTriangle className="w-3 h-3" />
+          <span>Allow popups for this site</span>
+        </div>
+      )}
+    </div>
   );
 }

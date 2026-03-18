@@ -134,12 +134,12 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
     const fillLight = scene.getObjectByName("__fillLight") as THREE.DirectionalLight | undefined;
 
     if (lighting === "studio") {
-      // Otherside studio: soft purple-tinted lighting
-      scene.background = new THREE.Color(0x0c0a18);
-      scene.fog = new THREE.Fog(0x0c0a18, 25, 60);
-      if (ambient) { ambient.color.set(0xe8e0ff); ambient.intensity = 1.0; }
+      // Bright studio: light background like original daytime mode
+      scene.background = new THREE.Color(0xc8d8e8);
+      scene.fog = new THREE.Fog(0xc8d8e8, 25, 60);
+      if (ambient) { ambient.color.set(0xffffff); ambient.intensity = 1.2; }
       if (dirLight) { dirLight.color.set(0xffffff); dirLight.intensity = 1.5; dirLight.position.set(5, 10, 5); }
-      if (fillLight) { fillLight.color.set(0x7b6cf6); fillLight.intensity = 0.3; }
+      if (fillLight) { fillLight.color.set(0x8888ff); fillLight.intensity = 0.4; }
     } else if (lighting === "sunset") {
       // Portal glow: warm pinks and purples
       scene.background = new THREE.Color(0x120810);
