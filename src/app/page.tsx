@@ -43,7 +43,7 @@ export default function Home() {
   const [glyphUsername, setGlyphUsername] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("build");
   const [codeCollapsed, setCodeCollapsed] = useState(false);
-  const userId = walletAddress || localUserId;
+  const userId = glyphUsername || walletAddress || localUserId;
   const glyphConnected = !!walletAddress;
 
   const handleWalletAddress = useCallback((addr: string | undefined) => {
