@@ -93,7 +93,13 @@ export default function Home() {
       }
 
       setMmlCode(result.mmlCode);
-      const description = result.content.replace(/```[\s\S]*?```/g, "").trim();
+      // Strip all code blocks (complete and truncated/unclosed) and bare MML tags
+      const description = result.content
+        .replace(/```[\s\S]*?```/g, "")         // complete fenced blocks
+        .replace(/```[\s\S]*/g, "")             // unclosed/truncated fenced blocks
+        .replace(/<m-group[\s\S]*/g, "")        // bare MML that wasn't fenced
+        .replace(/\n{3,}/g, "\n\n")             // collapse excess newlines
+        .trim();
       if ((window as any).__addAssistantMessage) {
         (window as any).__addAssistantMessage(description || "Updated the MML object.");
       }

@@ -40,6 +40,16 @@ export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: 
   const [failCount, setFailCount] = useState(0);
   const connectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Store SDK functions in refs so callbacks stay stable across renders
+  const loginRef = useRef(login);
+  loginRef.current = login;
+  const logoutRef = useRef(logout);
+  logoutRef.current = logout;
+  const connectRef = useRef(connect);
+  connectRef.current = connect;
+  const disconnectRef = useRef(disconnect);
+  disconnectRef.current = disconnect;
+
   // Glyph SDK v2 types are loose — cast user to access wallet fields
   const u = user as any;
 
@@ -72,30 +82,33 @@ export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: 
       setFailCount((c) => c + 1);
     }, 30000);
 
-    // Use login() (Privy-level auth) which opens a single popup/modal.
-    // After login succeeds the SDK auto-reconnects the wagmi connector
-    // via its InjectWagmiConnector, so no second popup is needed.
-    try {
-      login();
-    } catch (err: any) {
-      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
-      const msg = err?.message?.toLowerCase() || "";
-      if (msg.includes("popup") || msg.includes("blocked") || msg.includes("denied")) {
-        setPopupBlocked(true);
+    // Call connect() synchronously within the click handler so the browser
+    // treats the popup as a user-initiated gesture.
+    Promise.resolve(connectRef.current()).then(
+      () => {
+        if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+        setConnecting(false);
+      },
+      (err: any) => {
+        if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+        const msg = err?.message?.toLowerCase() || "";
+        if (msg.includes("popup") || msg.includes("blocked") || msg.includes("denied")) {
+          setPopupBlocked(true);
+        }
+        console.warn("[Glyph] Connect error:", err);
+        setConnecting(false);
+        setFailCount((c) => c + 1);
       }
-      console.warn("[Glyph] Connect error:", err);
-      setConnecting(false);
-      setFailCount((c) => c + 1);
-    }
-  }, [login]);
+    );
+  }, []); // stable — no deps, uses refs
 
   const handleDisconnect = useCallback(() => {
-    try { disconnect(); } catch { /* wagmi disconnect may throw if not connected */ }
-    try { logout(); } catch { /* privy logout may throw */ }
+    try { disconnectRef.current(); } catch { /* wagmi disconnect may throw if not connected */ }
+    try { logoutRef.current(); } catch { /* privy logout may throw */ }
     setPopupBlocked(false);
     setConnecting(false);
     setFailCount(0);
-  }, [disconnect, logout]);
+  }, []); // stable — no deps, uses refs
 
   const handleReset = useCallback(() => {
     // Full reset: logout, clear stale state, allow retry
@@ -105,7 +118,7 @@ export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: 
     setFailCount(0);
   }, [handleDisconnect]);
 
-  // Expose connect/disconnect to parent
+  // Expose connect/disconnect to parent (stable refs prevent re-triggering)
   useEffect(() => {
     if (onExposeActions) {
       onExposeActions({ connect: handleConnect, disconnect: handleDisconnect });
