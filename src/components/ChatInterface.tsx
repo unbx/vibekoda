@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Settings, CheckCircle2, Sparkles, Loader2, Plus, User, X, Zap, AlertTriangle } from "lucide-react";
+import { Settings, CheckCircle2, Sparkles, Loader2, Plus, User, X, Zap, AlertTriangle, Wallet, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Message, DemoUsage } from "@/lib/ai";
 
@@ -16,6 +16,8 @@ interface ChatInterfaceProps {
   isGenerating: boolean;
   onNewObject: () => void;
   userId: string;
+  glyphConnected: boolean;
+  onConnectGlyph?: () => void;
 }
 
 interface ChatBubble {
@@ -164,7 +166,7 @@ function randomInterval(): number {
   return 2500 + Math.floor(Math.random() * 2500);
 }
 
-export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId }: ChatInterfaceProps) {
+export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, glyphConnected, onConnectGlyph }: ChatInterfaceProps) {
   const [prompt, setPrompt] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showApiNudge, setShowApiNudge] = useState(false);
@@ -336,7 +338,8 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId }:
   });
 
   const isDemo = provider === "demo";
-  const canSubmit = isDemo || !!apiKey;
+  const demoNeedsGlyph = isDemo && !glyphConnected;
+  const canSubmit = isDemo ? glyphConnected : !!apiKey;
 
   return (
     <div className="flex flex-col h-full w-full relative">
@@ -406,7 +409,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId }:
                   <div>
                     <p className="text-xs text-[var(--primary-light)] font-semibold">Demo Mode</p>
                     <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono leading-relaxed">
-                      5 object builds with 5 refinements each. Powered by Claude Sonnet. No API key needed!
+                      5 object builds with 5 refinements each. Powered by Claude Sonnet. Requires Glyph wallet connection.
                     </p>
                   </div>
                 </div>
@@ -584,6 +587,38 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId }:
         )}
       </AnimatePresence>
 
+      {/* Glyph Connection Nudge (Demo mode only) */}
+      <AnimatePresence>
+        {demoNeedsGlyph && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-4 py-3 bg-[var(--primary)]/5 border-t border-[var(--primary)]/15 shrink-0 space-y-2"
+          >
+            <div className="flex items-start gap-2">
+              <Wallet className="w-4 h-4 text-[var(--primary)] shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[11px] text-[var(--primary-light)] font-semibold">Connect Glyph to use Demo</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono">
+                  Your wallet identity is used to track your 5 free builds.
+                </p>
+              </div>
+            </div>
+            {onConnectGlyph && (
+              <button
+                onClick={onConnectGlyph}
+                className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl"
+              >
+                <Wallet className="w-3 h-3" />
+                CONNECT GLYPH
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* API Key Nudge (BYO mode only) */}
       <AnimatePresence>
         {showApiNudge && !isDemo && (
@@ -625,9 +660,11 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId }:
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={
-              canSubmit
-                ? (chatHistory.length > 0 ? "Refine this object..." : "Create a glowing portal...")
-                : "Configure API settings first!"
+              demoNeedsGlyph
+                ? "Connect Glyph to start building..."
+                : canSubmit
+                  ? (chatHistory.length > 0 ? "Refine this object..." : "Create a glowing portal...")
+                  : "Configure API settings first!"
             }
             disabled={isGenerating}
             className="w-full bg-black/40 border border-[var(--panel-border)] focus:border-[var(--primary)]/40 rounded-full py-3 pl-12 pr-14 text-sm text-white focus:outline-none transition-all placeholder:text-[var(--text-muted)]"

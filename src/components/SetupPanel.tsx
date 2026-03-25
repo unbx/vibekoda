@@ -169,7 +169,7 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
                           {isDemo ? "Demo Mode (Claude Sonnet)" : `${providerLabel}: ${aiSettings?.model}`}
                         </p>
                         {isDemo ? (
-                          <p className="text-[10px] text-green-400/60 font-mono mt-0.5">5 free builds · No key needed</p>
+                          <p className="text-[10px] text-green-400/60 font-mono mt-0.5">5 free builds · Glyph wallet required</p>
                         ) : (
                           <div className="flex items-center gap-1 mt-0.5">
                             <p className="text-[10px] text-green-400/60 font-mono truncate">

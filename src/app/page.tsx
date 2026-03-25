@@ -191,7 +191,7 @@ export default function Home() {
               {/* Content area */}
               <div className="flex-1 overflow-hidden">
                 {leftTab === "build" ? (
-                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} userId={userId} />
+                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} userId={userId} glyphConnected={glyphConnected} onConnectGlyph={glyphActions?.connect} />
                 ) : (
                   <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
                 )}
