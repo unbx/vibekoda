@@ -108,7 +108,7 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Wallet className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                  <span className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)]">GLYPH WALLET</span>
+                  <span className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)]">WALLET</span>
                 </div>
                 {glyphConnected ? (
                   <div className="flex items-center justify-between bg-green-950/20 border border-green-500/15 rounded-xl px-3 py-2.5">
@@ -125,7 +125,7 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
                       <button
                         onClick={() => { onDisconnectGlyph(); setIsOpen(false); }}
                         className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors text-[var(--text-muted)] hover:text-red-400 shrink-0"
-                        title="Disconnect Glyph"
+                        title="Disconnect Wallet"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                       </button>
@@ -146,7 +146,7 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
                         className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl"
                       >
                         <Wallet className="w-3 h-3" />
-                        CONNECT GLYPH
+                        CONNECT WALLET
                         <ArrowRight className="w-3 h-3" />
                       </button>
                     )}
@@ -169,7 +169,7 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
                           {isDemo ? "Demo Mode (Claude Sonnet)" : `${providerLabel}: ${aiSettings?.model}`}
                         </p>
                         {isDemo ? (
-                          <p className="text-[10px] text-green-400/60 font-mono mt-0.5">5 free builds · Glyph wallet required</p>
+                          <p className="text-[10px] text-green-400/60 font-mono mt-0.5">5 free builds · Wallet required</p>
                         ) : (
                           <div className="flex items-center gap-1 mt-0.5">
                             <p className="text-[10px] text-green-400/60 font-mono truncate">
