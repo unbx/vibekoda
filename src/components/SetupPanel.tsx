@@ -48,10 +48,13 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen]);
 
-  const hasApiKey = !!aiSettings?.apiKey;
+  const isDemo = aiSettings?.provider === "demo";
+  const hasApiKey = isDemo || !!aiSettings?.apiKey;
   const allConfigured = glyphConnected && hasApiKey;
 
-  const providerLabel = aiSettings?.provider === "openai"
+  const providerLabel = aiSettings?.provider === "demo"
+    ? "Demo"
+    : aiSettings?.provider === "openai"
     ? "OpenAI"
     : aiSettings?.provider === "anthropic"
     ? "Anthropic"
@@ -162,15 +165,21 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
                     <div className="flex items-center gap-2 bg-green-950/20 border border-green-500/15 rounded-xl px-3 py-2.5">
                       <Check className="w-3.5 h-3.5 text-green-400 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-green-300 font-semibold">{providerLabel}: {aiSettings?.model}</p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <p className="text-[10px] text-green-400/60 font-mono truncate">
-                            {showKey ? aiSettings?.apiKey : maskedKey}
-                          </p>
-                          <button onClick={() => setShowKey(!showKey)} className="text-green-400/40 hover:text-green-400 transition-colors shrink-0">
-                            {showKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                          </button>
-                        </div>
+                        <p className="text-xs text-green-300 font-semibold">
+                          {isDemo ? "Demo Mode (Claude Sonnet)" : `${providerLabel}: ${aiSettings?.model}`}
+                        </p>
+                        {isDemo ? (
+                          <p className="text-[10px] text-green-400/60 font-mono mt-0.5">5 free builds · No key needed</p>
+                        ) : (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <p className="text-[10px] text-green-400/60 font-mono truncate">
+                              {showKey ? aiSettings?.apiKey : maskedKey}
+                            </p>
+                            <button onClick={() => setShowKey(!showKey)} className="text-green-400/40 hover:text-green-400 transition-colors shrink-0">
+                              {showKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {onOpenAiSettings && (

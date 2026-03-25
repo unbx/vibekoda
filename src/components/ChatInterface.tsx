@@ -1,20 +1,29 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Settings, CheckCircle2, Sparkles, Loader2, Plus, User, X } from "lucide-react";
+import { Settings, CheckCircle2, Sparkles, Loader2, Plus, User, X, Zap, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Message } from "@/lib/ai";
+import type { Message, DemoUsage } from "@/lib/ai";
 
 interface ChatInterfaceProps {
-  onGenerate: (messages: Message[], apiKey: string, endpoint: string, model: string) => Promise<void>;
+  onGenerate: (
+    messages: Message[],
+    apiKey: string,
+    endpoint: string,
+    model: string,
+    demoOpts?: { conversationId: string; isNewGeneration: boolean }
+  ) => Promise<void>;
   isGenerating: boolean;
   onNewObject: () => void;
+  userId: string;
 }
 
 interface ChatBubble {
   role: "user" | "assistant";
   text: string;
 }
+
+type Provider = "demo" | "openai" | "anthropic" | "custom";
 
 const AI_SETTINGS_KEY = "vibekoda_ai_settings";
 
@@ -155,11 +164,11 @@ function randomInterval(): number {
   return 2500 + Math.floor(Math.random() * 2500);
 }
 
-export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInterfaceProps) {
+export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId }: ChatInterfaceProps) {
   const [prompt, setPrompt] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showApiNudge, setShowApiNudge] = useState(false);
-  const [provider, setProvider] = useState<"openai" | "anthropic" | "custom">("openai");
+  const [provider, setProvider] = useState<Provider>("demo");
   const [apiKey, setApiKey] = useState("");
   const [endpoint, setEndpoint] = useState("https://api.openai.com/v1/chat/completions");
   const [model, setModel] = useState("gpt-4o-mini");
@@ -169,6 +178,12 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [loadingQuip, setLoadingQuip] = useState("");
   const [lastUserPrompt, setLastUserPrompt] = useState("");
+
+  // Demo tracking
+  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
+  const [isFirstMessage, setIsFirstMessage] = useState(true);
+  const [demoUsage, setDemoUsage] = useState<DemoUsage | null>(null);
+  const [demoExhausted, setDemoExhausted] = useState<string | null>(null); // error message
 
   // Rotate loading quips while generating — context-aware with random timing
   useEffect(() => {
@@ -190,10 +205,14 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
   useEffect(() => {
     const saved = loadAiSettings();
     if (saved) {
-      if (saved.provider) setProvider(saved.provider);
-      if (saved.apiKey) setApiKey(saved.apiKey);
-      if (saved.endpoint) setEndpoint(saved.endpoint);
-      if (saved.model) setModel(saved.model);
+      // If user previously configured a BYO provider, use it as default
+      if (saved.provider && saved.provider !== "demo" && saved.apiKey) {
+        setProvider(saved.provider);
+        setApiKey(saved.apiKey);
+        if (saved.endpoint) setEndpoint(saved.endpoint);
+        if (saved.model) setModel(saved.model);
+      }
+      // Otherwise stay on "demo" (the default)
     }
     setSettingsLoaded(true);
   }, []);
@@ -204,9 +223,18 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
     saveAiSettings({ provider, apiKey, endpoint, model });
   }, [provider, apiKey, endpoint, model, settingsLoaded]);
 
-  const handleProviderChange = (newProvider: "openai" | "anthropic" | "custom") => {
+  // Expose demo usage updater
+  useEffect(() => {
+    (window as any).__updateDemoUsage = (usage: DemoUsage) => setDemoUsage(usage);
+    return () => { delete (window as any).__updateDemoUsage; };
+  });
+
+  const handleProviderChange = (newProvider: Provider) => {
     setProvider(newProvider);
-    if (newProvider === "openai") {
+    setDemoExhausted(null);
+    if (newProvider === "demo") {
+      // No key needed
+    } else if (newProvider === "openai") {
       setEndpoint("https://api.openai.com/v1/chat/completions");
       setModel("gpt-4o-mini");
     } else if (newProvider === "anthropic") {
@@ -227,6 +255,9 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
   const handleNewObject = () => {
     setChatHistory([]);
     setMessageHistory([]);
+    setConversationId(crypto.randomUUID());
+    setIsFirstMessage(true);
+    setDemoExhausted(null);
     onNewObject();
   };
 
@@ -234,20 +265,38 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
     e.preventDefault();
     if (!prompt.trim() || isGenerating) return;
 
-    if (!apiKey) {
+    // BYO providers need an API key
+    if (provider !== "demo" && !apiKey) {
       setShowApiNudge(true);
       setTimeout(() => setShowApiNudge(false), 5000);
       return;
     }
 
     setShowApiNudge(false);
+    setDemoExhausted(null);
     const userMessage = prompt.trim();
     setLastUserPrompt(userMessage);
     setPrompt("");
     setChatHistory(prev => [...prev, { role: "user", text: userMessage }]);
     const newMessages: Message[] = [...messageHistory, { role: "user", content: userMessage }];
     setMessageHistory(newMessages);
-    await onGenerate(newMessages, apiKey, endpoint, model);
+
+    try {
+      if (provider === "demo") {
+        await onGenerate(newMessages, "", "", "", {
+          conversationId,
+          isNewGeneration: isFirstMessage,
+        });
+      } else {
+        await onGenerate(newMessages, apiKey, endpoint, model);
+      }
+      setIsFirstMessage(false);
+    } catch (err: any) {
+      // Handle demo exhaustion errors with special UX
+      if (err?.errorType === "demo_exhausted" || err?.errorType === "refinements_exhausted") {
+        setDemoExhausted(err.message);
+      }
+    }
   };
 
   useEffect(() => {
@@ -264,6 +313,9 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
     return () => { delete (window as any).__addAssistantMessage; };
   });
 
+  const isDemo = provider === "demo";
+  const canSubmit = isDemo || !!apiKey;
+
   return (
     <div className="flex flex-col h-full w-full relative">
       {/* Panel Header */}
@@ -279,6 +331,20 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
         </button>
       </div>
 
+      {/* Demo usage indicator */}
+      {isDemo && demoUsage && (
+        <div className="px-4 py-1.5 border-b border-white/[0.04] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-1.5">
+            <Zap className="w-3 h-3 text-[var(--primary)]" />
+            <span className="text-[9px] font-mono text-[var(--text-muted)]">DEMO</span>
+          </div>
+          <span className="text-[9px] font-mono text-[var(--text-muted)]">
+            {demoUsage.generationsUsed}/{demoUsage.generationsMax} builds
+            {demoUsage.refinementsUsed > 0 && ` · ${demoUsage.refinementsUsed}/${demoUsage.refinementsMax} refines`}
+          </span>
+        </div>
+      )}
+
       {/* Settings Modal */}
       <AnimatePresence>
         {showSettings && (
@@ -290,7 +356,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
           >
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-display-light text-[11px] tracking-[0.15em] text-[var(--primary-light)] flex items-center gap-2">
-                <Settings className="w-4 h-4" /> BRING YOUR OWN AGENT
+                <Settings className="w-4 h-4" /> AGENT CONFIGURATION
               </h3>
               <button onClick={() => setShowSettings(false)} className="text-[var(--text-muted)] hover:text-white">
                 <X className="w-4 h-4" />
@@ -302,73 +368,90 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
                 <label className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)] block mb-1.5">API PROVIDER</label>
                 <select
                   value={provider}
-                  onChange={(e) => handleProviderChange(e.target.value as any)}
+                  onChange={(e) => handleProviderChange(e.target.value as Provider)}
                   className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors appearance-none"
                 >
-                  <option value="openai">OpenAI (Default)</option>
-                  <option value="anthropic">Anthropic (Claude)</option>
+                  <option value="demo">Demo (5 free builds)</option>
+                  <option value="openai">OpenAI (Your Key)</option>
+                  <option value="anthropic">Anthropic (Your Key)</option>
                   <option value="custom">Custom Endpoint</option>
                 </select>
               </div>
 
-              <div>
-                <label className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)] flex items-center justify-between mb-1.5">
-                  <span>API KEY</span>
-                  {provider !== "custom" && <span className="text-[var(--primary)]/40">LOCAL ONLY</span>}
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={provider === "openai" ? "sk-proj-..." : provider === "anthropic" ? "sk-ant-..." : "API Key"}
-                  className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors"
-                />
-              </div>
+              {isDemo && (
+                <div className="flex items-start gap-2 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-xl px-3 py-2.5">
+                  <Zap className="w-3.5 h-3.5 text-[var(--primary)] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-[var(--primary-light)] font-semibold">Demo Mode</p>
+                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono leading-relaxed">
+                      5 object builds with 5 refinements each. Powered by Claude Sonnet. No API key needed!
+                    </p>
+                  </div>
+                </div>
+              )}
 
-              <div>
-                <label className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)] block mb-1.5">ENDPOINT URL</label>
-                <input
-                  type="text"
-                  value={endpoint}
-                  onChange={(e) => setEndpoint(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors"
-                />
-              </div>
+              {!isDemo && (
+                <>
+                  <div>
+                    <label className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)] flex items-center justify-between mb-1.5">
+                      <span>API KEY</span>
+                      {provider !== "custom" && <span className="text-[var(--primary)]/40">LOCAL ONLY</span>}
+                    </label>
+                    <input
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder={provider === "openai" ? "sk-proj-..." : provider === "anthropic" ? "sk-ant-..." : "API Key"}
+                      className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors"
+                    />
+                  </div>
 
-              <div>
-                <label className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)] block mb-1.5">MODEL</label>
-                {provider === "custom" ? (
-                  <input
-                    type="text"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    placeholder="e.g., local-model-name"
-                    className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors"
-                  />
-                ) : (
-                  <select
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors appearance-none"
-                  >
-                    {provider === "openai" && (
-                      <optgroup label="OpenAI Models">
-                        <option value="gpt-4o-mini">gpt-4o-mini (Fast)</option>
-                        <option value="gpt-4o">gpt-4o (Capable)</option>
-                        <option value="gpt-4-turbo">gpt-4-turbo</option>
-                      </optgroup>
+                  <div>
+                    <label className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)] block mb-1.5">ENDPOINT URL</label>
+                    <input
+                      type="text"
+                      value={endpoint}
+                      onChange={(e) => setEndpoint(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-display-light text-[9px] tracking-[0.15em] text-[var(--text-muted)] block mb-1.5">MODEL</label>
+                    {provider === "custom" ? (
+                      <input
+                        type="text"
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                        placeholder="e.g., local-model-name"
+                        className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors"
+                      />
+                    ) : (
+                      <select
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                        className="w-full bg-black/50 border border-[var(--panel-border)] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[var(--primary)]/50 transition-colors appearance-none"
+                      >
+                        {provider === "openai" && (
+                          <optgroup label="OpenAI Models">
+                            <option value="gpt-4o-mini">gpt-4o-mini (Fast)</option>
+                            <option value="gpt-4o">gpt-4o (Capable)</option>
+                            <option value="gpt-4-turbo">gpt-4-turbo</option>
+                          </optgroup>
+                        )}
+                        {provider === "anthropic" && (
+                          <optgroup label="Anthropic Models">
+                            <option value="claude-opus-4-6">Claude Opus 4.6</option>
+                            <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                            <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+                          </optgroup>
+                        )}
+                      </select>
                     )}
-                    {provider === "anthropic" && (
-                      <optgroup label="Anthropic Models">
-                        <option value="claude-opus-4-6">Claude Opus 4.6</option>
-                        <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
-                        <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
-                      </optgroup>
-                    )}
-                  </select>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <button
@@ -450,9 +533,38 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
         <div ref={messagesEndRef} />
       </div>
 
-      {/* API Key Nudge */}
+      {/* Demo Exhaustion Banner */}
       <AnimatePresence>
-        {showApiNudge && (
+        {demoExhausted && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-4 py-3 bg-amber-950/30 border-t border-amber-500/20 shrink-0 space-y-2"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[11px] text-amber-300 font-semibold">{demoExhausted}</p>
+                <p className="text-[10px] text-amber-300/70 mt-1 font-mono">
+                  Bring your own API key for unlimited builds.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => { setDemoExhausted(null); setShowSettings(true); }}
+              className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl"
+            >
+              <Settings className="w-3 h-3" />
+              CONFIGURE YOUR OWN AGENT
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* API Key Nudge (BYO mode only) */}
+      <AnimatePresence>
+        {showApiNudge && !isDemo && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -479,7 +591,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
             type="button"
             onClick={() => setShowSettings(!showSettings)}
             className={`absolute left-3 p-2 rounded-full transition-colors ${
-              apiKey ? "text-[var(--primary)] hover:bg-[var(--primary)]/10" : "text-[var(--text-muted)] hover:text-white hover:bg-white/5"
+              canSubmit ? "text-[var(--primary)] hover:bg-[var(--primary)]/10" : "text-[var(--text-muted)] hover:text-white hover:bg-white/5"
             }`}
             title="Agent Settings"
           >
@@ -490,7 +602,11 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject }: ChatInt
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={apiKey ? (chatHistory.length > 0 ? "Refine this object..." : "Create a glowing portal...") : "Configure API settings first!"}
+            placeholder={
+              canSubmit
+                ? (chatHistory.length > 0 ? "Refine this object..." : "Create a glowing portal...")
+                : "Configure API settings first!"
+            }
             disabled={isGenerating}
             className="w-full bg-black/40 border border-[var(--panel-border)] focus:border-[var(--primary)]/40 rounded-full py-3 pl-12 pr-14 text-sm text-white focus:outline-none transition-all placeholder:text-[var(--text-muted)]"
           />

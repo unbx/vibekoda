@@ -78,8 +78,7 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
   }, [fetchObjects]);
 
   const handleCopyUrl = async (obj: MMLObject) => {
-    const fullShareUrl = `${window.location.origin}${obj.shareUrl}`;
-    await navigator.clipboard.writeText(fullShareUrl);
+    await navigator.clipboard.writeText(obj.url);
     setCopiedKey(obj.key);
     setTimeout(() => setCopiedKey(null), 2000);
   };
@@ -181,7 +180,7 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
                 </button>
                 <button
                   onClick={() => handleCopyUrl(obj)}
-                  title="Copy shareable link"
+                  title="Copy direct MML link"
                   className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/[0.06] rounded-lg transition-colors"
                 >
                   {copiedKey === obj.key ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
@@ -200,6 +199,8 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
                 href="https://otherside.xyz/mmls"
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => navigator.clipboard.writeText(obj.url)}
+                title="Opens Otherside & copies MML link to clipboard"
                 className="flex items-center justify-center gap-1.5 w-full mt-1.5 py-1.5 rounded-lg bg-white/5 hover:bg-[var(--primary)]/20 border border-white/[0.06] hover:border-[var(--primary)]/30 text-[10px] text-[var(--text-muted)] hover:text-[var(--primary-light)] transition-all font-mono"
               >
                 <ExternalLink className="w-3 h-3" />

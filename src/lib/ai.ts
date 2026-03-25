@@ -64,6 +64,71 @@ When you generate or modify an object, ALWAYS:
 - **Rotation**: \`rx\`, \`ry\`, \`rz\` (degrees)
 - **Scale**: \`sx\`, \`sy\`, \`sz\` for non-uniform OR \`scale\` for uniform.`;
 
+export interface DemoUsage {
+  generationsUsed: number;
+  generationsMax: number;
+  refinementsUsed: number;
+  refinementsMax: number;
+}
+
+function extractMmlCode(content: string): string {
+  const mmlMatch =
+    content.match(/```(?:html|xml)?\n([\s\S]*?)```/) ||  // complete block
+    content.match(/```(?:html|xml)?\n([\s\S]+)/) ||      // unclosed block (truncated)
+    content.match(/(<m-group[\s\S]+)/);                  // bare MML fallback
+  return mmlMatch ? mmlMatch[1].trim() : content.trim();
+}
+
+/**
+ * Generate MML via DEMO mode — routes through /api/generate-mml
+ * which uses the server-side Anthropic key with usage limits.
+ */
+export async function generateMMLDemo(
+  messages: Message[],
+  userId: string,
+  conversationId: string,
+  isNewGeneration: boolean
+): Promise<{ content: string; mmlCode: string; demo: DemoUsage }> {
+  const userMessages = messages.map(m => ({
+    role: m.role as string,
+    content: m.content
+  }));
+
+  const response = await fetch("/api/generate-mml", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      messages: userMessages,
+      system: SYSTEM_PROMPT,
+      conversationId,
+      isNewGeneration,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    // Attach the error type so the UI can distinguish exhaustion from other errors
+    const err = new Error(data.message || data.error || `API Error: ${response.status}`);
+    (err as any).errorType = data.error; // "demo_exhausted" | "refinements_exhausted"
+    (err as any).usage = data.usage;
+    throw err;
+  }
+
+  const content = data.content?.[0]?.text || "";
+  const mmlCode = extractMmlCode(content);
+
+  return {
+    content,
+    mmlCode,
+    demo: data._demo,
+  };
+}
+
+/**
+ * Generate MML with the user's own API key (BYO Agent).
+ */
 export async function generateMML(
   messages: Message[],
   apiKey: string,
@@ -90,7 +155,7 @@ export async function generateMML(
       role: m.role as string,
       content: m.content
     }));
-    
+
     fetchOptions = {
       method: 'POST',
       headers: {
@@ -140,13 +205,7 @@ export async function generateMML(
       content = data.choices[0].message.content;
     }
 
-    // Extract MML code from the markdown block.
-    // Also handles truncated responses where the closing ``` is missing.
-    const mmlMatch =
-      content.match(/```(?:html|xml)?\n([\s\S]*?)```/) ||  // complete block
-      content.match(/```(?:html|xml)?\n([\s\S]+)/) ||      // unclosed block (truncated)
-      content.match(/(<m-group[\s\S]+)/);                  // bare MML fallback
-    const mmlCode = mmlMatch ? mmlMatch[1].trim() : content.trim();
+    const mmlCode = extractMmlCode(content);
 
     return { content, mmlCode };
   } catch (error) {

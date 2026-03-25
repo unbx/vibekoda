@@ -156,21 +156,19 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
   return (
     <section
       className={`shrink-0 flex flex-col border-l border-[var(--primary)]/15 bg-[rgba(16,13,28,0.95)] transition-all w-full lg:w-auto ${
-        isOpen ? "lg:w-[320px] lg:min-w-[280px]" : "lg:w-10"
+        isOpen ? "lg:w-[320px] lg:min-w-[320px] lg:max-w-[320px]" : "lg:w-12"
       } overflow-hidden flex-1 lg:flex-initial`}
     >
       {/* Collapsed: vertical label strip (desktop only) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="hidden lg:flex flex-col items-center justify-center gap-2 h-full w-full py-4 text-[var(--text-secondary)] hover:text-white hover:bg-[var(--primary)]/5 transition-colors"
+          className="hidden lg:flex flex-col items-center justify-center gap-3 h-full w-full py-6 text-[var(--text-secondary)] hover:text-white bg-[var(--primary)]/5 hover:bg-[var(--primary)]/15 border-l-2 border-[var(--primary)]/40 transition-all"
           title="Open World Chat"
         >
-          <Radio className="w-3.5 h-3.5 text-[var(--primary)] animate-pulse" />
-          <span className="text-[9px] font-display-light tracking-[0.15em] [writing-mode:vertical-rl] rotate-180">WORLD CHAT</span>
-          {messages.length > 0 && (
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          )}
+          <Radio className="w-5 h-5 text-[var(--primary)] animate-pulse drop-shadow-[0_0_6px_var(--primary)]" />
+          <span className="text-[10px] font-display-light tracking-[0.2em] text-[var(--primary-light)] [writing-mode:vertical-rl] rotate-180">WORLD CHAT</span>
+          <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse shadow-[0_0_8px_var(--primary)]" />
         </button>
       )}
 
@@ -259,7 +257,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-200 leading-relaxed">{msg.message}</p>
+                <p className="text-xs text-gray-200 leading-relaxed break-words overflow-hidden">{msg.message}</p>
               </div>
             ))}
             <div ref={messagesEndRef} />

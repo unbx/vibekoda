@@ -6,8 +6,8 @@ import { CodeEditor, CodeEditorActions } from "@/components/CodeEditor";
 import { ScenePreview } from "@/components/ScenePreview";
 import { GalleryPanel } from "@/components/GalleryPanel";
 import { WorldChat } from "@/components/WorldChat";
-import { generateMML, DEMO_MML } from "@/lib/ai";
-import type { Message } from "@/lib/ai";
+import { generateMML, generateMMLDemo, DEMO_MML } from "@/lib/ai";
+import type { Message, DemoUsage } from "@/lib/ai";
 import { SetupPanel } from "@/components/SetupPanel";
 import { AlertCircle, Lightbulb, Moon, Sunset, Hammer, LayoutGrid, ChevronDown, ChevronUp, ChevronLeft, Radio } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -67,18 +67,44 @@ export default function Home() {
     setLocalUserId(generateUserId());
   }, []);
 
-  const handleGenerate = async (messages: Message[], apiKey: string, endpoint: string, model: string) => {
+  const handleGenerate = async (
+    messages: Message[],
+    apiKey: string,
+    endpoint: string,
+    model: string,
+    demoOpts?: { conversationId: string; isNewGeneration: boolean }
+  ) => {
     setIsGenerating(true);
     setError(null);
     try {
-      const result = await generateMML(messages, apiKey, endpoint, model);
+      let result: { content: string; mmlCode: string; demo?: DemoUsage };
+
+      if (demoOpts) {
+        // DEMO mode — route through server-side proxy
+        result = await generateMMLDemo(
+          messages,
+          userId,
+          demoOpts.conversationId,
+          demoOpts.isNewGeneration
+        );
+      } else {
+        // BYO Agent mode — direct API call
+        result = await generateMML(messages, apiKey, endpoint, model);
+      }
+
       setMmlCode(result.mmlCode);
       const description = result.content.replace(/```[\s\S]*?```/g, "").trim();
       if ((window as any).__addAssistantMessage) {
         (window as any).__addAssistantMessage(description || "Updated the MML object.");
       }
+      // Pass demo usage back for UI tracking
+      if (result.demo && (window as any).__updateDemoUsage) {
+        (window as any).__updateDemoUsage(result.demo);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
+      // Re-throw so ChatInterface can detect exhaustion errors
+      throw err;
     } finally {
       setIsGenerating(false);
     }
@@ -159,7 +185,7 @@ export default function Home() {
               {/* Content area */}
               <div className="flex-1 overflow-hidden">
                 {leftTab === "build" ? (
-                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} />
+                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} userId={userId} />
                 ) : (
                   <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
                 )}

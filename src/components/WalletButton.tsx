@@ -1,15 +1,44 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useGlyph, useNativeGlyphConnection } from "@use-glyph/sdk-react";
-import { Wallet, LogOut, Loader2, AlertTriangle } from "lucide-react";
+import { Wallet, LogOut, Loader2, AlertTriangle, RotateCcw } from "lucide-react";
+
+/**
+ * Clear stale Privy / cross-app connection data from localStorage so
+ * the user can retry after a popup-blocked or half-finished auth flow.
+ */
+function clearStaleGlyphState() {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("privy") ||
+          key.startsWith("privy-caw") ||
+          key.startsWith("wagmi") ||
+          key.startsWith("rk-") ||
+          key.includes("glyph"))
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    console.info("[Glyph] Cleared stale auth state (" + keysToRemove.length + " keys)");
+  } catch {
+    // localStorage may be unavailable — ignore
+  }
+}
 
 export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: { connect: () => void; disconnect: () => void }) => void } = {}) {
-  const { user, authenticated, ready } = useGlyph();
+  const { user, authenticated, ready, login, logout } = useGlyph();
   const { connect, disconnect } = useNativeGlyphConnection();
   const [timedOut, setTimedOut] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [failCount, setFailCount] = useState(0);
+  const connectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Glyph SDK v2 types are loose — cast user to access wallet fields
   const u = user as any;
@@ -21,35 +50,74 @@ export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: 
     return () => clearTimeout(timer);
   }, [ready]);
 
+  // When authenticated becomes true while we're in a connecting state,
+  // the login succeeded — clear the connecting spinner.
+  useEffect(() => {
+    if (authenticated && connecting) {
+      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+      setConnecting(false);
+      setPopupBlocked(false);
+      setFailCount(0);
+    }
+  }, [authenticated, connecting]);
+
   const handleConnect = useCallback(() => {
     setPopupBlocked(false);
     setConnecting(true);
 
-    // Timeout: reset button if connect() never resolves (e.g. popup closed)
-    const timeout = setTimeout(() => setConnecting(false), 60000);
+    // Safety timeout: reset button if flow never completes (popup closed, etc.)
+    if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+    connectTimeoutRef.current = setTimeout(() => {
+      setConnecting(false);
+      setFailCount((c) => c + 1);
+    }, 30000);
 
-    // Call connect() synchronously within the click handler so the browser
-    // treats the popup as a user-initiated gesture (async/await loses this).
-    Promise.resolve(connect()).then(
-      () => { clearTimeout(timeout); setConnecting(false); },
-      (err: any) => {
-        clearTimeout(timeout);
-        const msg = err?.message?.toLowerCase() || "";
-        if (msg.includes("popup") || msg.includes("blocked") || msg.includes("denied")) {
-          setPopupBlocked(true);
-        }
-        console.warn("[Glyph] Connect error:", err);
-        setConnecting(false);
+    // Use login() (Privy-level auth) which opens a single popup/modal.
+    // After login succeeds the SDK auto-reconnects the wagmi connector
+    // via its InjectWagmiConnector, so no second popup is needed.
+    try {
+      login();
+    } catch (err: any) {
+      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+      const msg = err?.message?.toLowerCase() || "";
+      if (msg.includes("popup") || msg.includes("blocked") || msg.includes("denied")) {
+        setPopupBlocked(true);
       }
-    );
-  }, [connect]);
+      console.warn("[Glyph] Connect error:", err);
+      setConnecting(false);
+      setFailCount((c) => c + 1);
+    }
+  }, [login]);
+
+  const handleDisconnect = useCallback(() => {
+    try { disconnect(); } catch { /* wagmi disconnect may throw if not connected */ }
+    try { logout(); } catch { /* privy logout may throw */ }
+    setPopupBlocked(false);
+    setConnecting(false);
+    setFailCount(0);
+  }, [disconnect, logout]);
+
+  const handleReset = useCallback(() => {
+    // Full reset: logout, clear stale state, allow retry
+    handleDisconnect();
+    clearStaleGlyphState();
+    setPopupBlocked(false);
+    setFailCount(0);
+  }, [handleDisconnect]);
 
   // Expose connect/disconnect to parent
   useEffect(() => {
     if (onExposeActions) {
-      onExposeActions({ connect: handleConnect, disconnect });
+      onExposeActions({ connect: handleConnect, disconnect: handleDisconnect });
     }
-  }, [onExposeActions, handleConnect, disconnect]);
+  }, [onExposeActions, handleConnect, handleDisconnect]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+    };
+  }, []);
 
   // Show loading only briefly
   if (!ready && !timedOut) {
@@ -74,7 +142,7 @@ export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: 
           {label}
         </div>
         <button
-          onClick={disconnect}
+          onClick={handleDisconnect}
           className="p-1.5 hover:bg-white/5 rounded-full transition-colors text-[var(--text-muted)] hover:text-white"
           title="Disconnect"
         >
@@ -101,8 +169,18 @@ export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: 
       {popupBlocked && (
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-950/50 border border-amber-500/20 text-[10px] text-amber-300">
           <AlertTriangle className="w-3 h-3" />
-          <span>Allow popups for this site</span>
+          <span>Allow popups, then retry</span>
         </div>
+      )}
+      {failCount > 0 && !connecting && (
+        <button
+          onClick={handleReset}
+          title="Reset connection state and retry"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/[0.08] text-[10px] text-[var(--text-secondary)] hover:text-white transition-all"
+        >
+          <RotateCcw className="w-3 h-3" />
+          <span>RESET</span>
+        </button>
       )}
     </div>
   );
