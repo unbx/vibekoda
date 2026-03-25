@@ -284,7 +284,7 @@ export default function Home() {
                 <span className="font-mono text-[10px] text-[var(--text-muted)] opacity-60">&lt;/&gt;</span>
                 <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">MML CODE</span>
               </div>
-              <CodeEditorActions code={mmlCode} userId={userId} glyphConnected={glyphConnected} />
+              <CodeEditorActions code={mmlCode} userId={userId} glyphConnected={glyphConnected} onSaved={() => setLeftTab("gallery")} />
             </div>
             {/* Expandable code area */}
             {!codeCollapsed && (

@@ -10,7 +10,7 @@ interface CodeEditorProps {
   headerSlot?: boolean; // when true, render only the action buttons (for external header)
 }
 
-export function CodeEditorActions({ code, userId, glyphConnected }: { code: string; userId?: string; glyphConnected?: boolean }) {
+export function CodeEditorActions({ code, userId, glyphConnected, onSaved }: { code: string; userId?: string; glyphConnected?: boolean; onSaved?: () => void }) {
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedToGallery, setSavedToGallery] = useState(false);
@@ -43,6 +43,7 @@ export function CodeEditorActions({ code, userId, glyphConnected }: { code: stri
       } else {
         setSavedToGallery(true);
         setTimeout(() => setSavedToGallery(false), 10000);
+        onSaved?.();
         if (!glyphConnected) {
           setGlyphNudge(true);
           setTimeout(() => setGlyphNudge(false), 8000);
