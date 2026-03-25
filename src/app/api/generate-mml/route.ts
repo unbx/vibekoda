@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
 /**
  * /api/generate-mml — Server-side proxy for DEMO mode.
  *
  * Uses the server-side ANTHROPIC_API_KEY to call Claude on behalf of
- * the user.  Tracks per-user usage via a simple in-memory map (resets
- * on redeploy — swap with Vercel KV / DynamoDB for persistence).
+ * the user.  Tracks per-user usage via a JSON file in S3 so counters
+ * survive refreshes and redeploys.
  *
  * Limits:
  *   - DEMO_MAX_GENERATIONS  = 5  (fresh "New" conversations)
@@ -16,19 +17,58 @@ const DEMO_MAX_GENERATIONS = 5;
 const DEMO_MAX_REFINEMENTS = 5;
 const DEMO_MODEL = "claude-sonnet-4-6"; // fast + cheap for demo
 
-// ─── In-memory usage store ──────────────────────────────────────────
-// Key: `userId`, Value: { generations, refinementsMap }
+// ─── S3 client (reused across invocations in the same lambda) ────────
+const s3 = new S3Client({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+const BUCKET = process.env.S3_BUCKET_NAME!;
+const USAGE_PREFIX = "demo-usage"; // s3://vibekoda/demo-usage/{userId}.json
+
+// ─── Usage persistence via S3 ────────────────────────────────────────
 interface Usage {
-  generations: number; // number of "first" messages (new conversations)
+  generations: number;
   refinements: Record<string, number>; // conversationId → count
 }
-const usageStore = new Map<string, Usage>();
 
-function getUsage(userId: string): Usage {
-  if (!usageStore.has(userId)) {
-    usageStore.set(userId, { generations: 0, refinements: {} });
+const EMPTY_USAGE: Usage = { generations: 0, refinements: {} };
+
+async function getUsage(userId: string): Promise<Usage> {
+  try {
+    const key = `${USAGE_PREFIX}/${userId}.json`;
+    const res = await s3.send(
+      new GetObjectCommand({ Bucket: BUCKET, Key: key })
+    );
+    const body = await res.Body?.transformToString();
+    if (body) return JSON.parse(body) as Usage;
+  } catch (err: any) {
+    // NoSuchKey means the user has no usage yet — that's fine
+    if (err?.name !== "NoSuchKey") {
+      console.warn("[generate-mml] S3 getUsage error:", err);
+    }
   }
-  return usageStore.get(userId)!;
+  return { ...EMPTY_USAGE, refinements: {} };
+}
+
+async function putUsage(userId: string, usage: Usage): Promise<void> {
+  try {
+    const key = `${USAGE_PREFIX}/${userId}.json`;
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: key,
+        Body: JSON.stringify(usage),
+        ContentType: "application/json",
+      })
+    );
+  } catch (err) {
+    console.error("[generate-mml] S3 putUsage error:", err);
+    // Non-fatal — usage tracking is best-effort
+  }
 }
 
 // ─── Route handler ──────────────────────────────────────────────────
@@ -64,7 +104,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Usage checks ────────────────────────────────────────────────
-  const usage = getUsage(userId);
+  const usage = await getUsage(userId);
 
   if (isNewGeneration) {
     if (usage.generations >= DEMO_MAX_GENERATIONS) {
@@ -101,6 +141,10 @@ export async function POST(req: NextRequest) {
     }
     usage.refinements[conversationId] = refinements + 1;
   }
+
+  // Persist updated usage to S3 BEFORE calling Anthropic
+  // (so even if the API call fails, the usage is counted)
+  await putUsage(userId, usage);
 
   // ── Proxy to Anthropic ──────────────────────────────────────────
   try {
@@ -159,7 +203,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
   }
 
-  const usage = getUsage(userId);
+  const usage = await getUsage(userId);
   return NextResponse.json({
     generationsUsed: usage.generations,
     generationsMax: DEMO_MAX_GENERATIONS,

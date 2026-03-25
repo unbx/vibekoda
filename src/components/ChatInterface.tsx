@@ -229,6 +229,28 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId }:
     return () => { delete (window as any).__updateDemoUsage; };
   });
 
+  // Fetch persisted demo usage from server on mount (so counter survives refresh)
+  useEffect(() => {
+    if (!userId || provider !== "demo") return;
+    fetch(`/api/generate-mml?userId=${encodeURIComponent(userId)}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && typeof data.generationsUsed === "number") {
+          setDemoUsage({
+            generationsUsed: data.generationsUsed,
+            generationsMax: data.generationsMax,
+            refinementsUsed: 0,
+            refinementsMax: data.refinementsMax,
+          });
+          // If already exhausted, show the banner immediately
+          if (data.generationsUsed >= data.generationsMax) {
+            setDemoExhausted(`You've used all ${data.generationsMax} demo generations. Configure your own API key to keep building!`);
+          }
+        }
+      })
+      .catch(() => { /* network error — ignore, usage will sync on next generation */ });
+  }, [userId, provider]);
+
   const handleProviderChange = (newProvider: Provider) => {
     setProvider(newProvider);
     setDemoExhausted(null);
