@@ -666,8 +666,8 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
                   ? (chatHistory.length > 0 ? "Refine this object..." : "Create a glowing portal...")
                   : "Configure API settings first!"
             }
-            disabled={isGenerating}
-            className="w-full bg-black/40 border border-[var(--panel-border)] focus:border-[var(--primary)]/40 rounded-full py-3 pl-12 pr-14 text-sm text-white focus:outline-none transition-all placeholder:text-[var(--text-muted)]"
+            disabled={isGenerating || !canSubmit}
+            className={`w-full bg-black/40 border border-[var(--panel-border)] focus:border-[var(--primary)]/40 rounded-full py-3 pl-12 pr-14 text-sm text-white focus:outline-none transition-all placeholder:text-[var(--text-muted)] ${!canSubmit ? "opacity-50 cursor-not-allowed" : ""}`}
           />
 
           <button
