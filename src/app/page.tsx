@@ -46,7 +46,7 @@ export default function Home() {
   const [leftTab, setLeftTab] = useState<LeftTab>("build");
   const [codeCollapsed, setCodeCollapsed] = useState(false);
   const [isLeftOpen, setIsLeftOpen] = useState(true);
-  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("viewer");
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("chat");
   const [glyphActions, setGlyphActions] = useState<{ connect: () => void; disconnect: () => void; verify: () => void } | null>(null);
   const [chatAnalytics, setChatAnalytics] = useState<ChatAnalytics | null>(null);
   const userId = glyphUsername || walletAddress || localUserId;
@@ -319,7 +319,7 @@ export default function Home() {
         </section>
 
         {/* ─── Right Pane: World Chat (non-overlapping) ─── */}
-        <div className={`${mobilePanel === "chat" ? "flex flex-1 flex-col" : "hidden"} lg:flex lg:flex-initial lg:shrink-0`}>
+        <div className={`${mobilePanel === "chat" ? "flex flex-1 flex-col min-h-0 overflow-hidden" : "hidden"} lg:flex lg:flex-initial lg:shrink-0`}>
           <WorldChat
             currentMmlDescription={mmlCode}
             glyphUsername={glyphUsername}
