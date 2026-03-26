@@ -601,7 +601,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
             <div className="flex items-start gap-2">
               <Wallet className="w-4 h-4 text-[var(--primary)] shrink-0 mt-0.5" />
               <div>
-                <p className="text-[11px] text-[var(--primary-light)] font-semibold">Connect Glyph to use Demo</p>
+                <p className="text-[11px] text-[var(--primary-light)] font-semibold">Login to use Demo</p>
                 <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono">
                   Your wallet identity is used to track your 5 free builds.
                 </p>
@@ -613,7 +613,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
                 className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl"
               >
                 <Wallet className="w-3 h-3" />
-                CONNECT GLYPH
+                LOGIN
                 <ArrowRight className="w-3 h-3" />
               </button>
             )}
@@ -695,7 +695,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={
               demoNeedsGlyph
-                ? "Connect Glyph to start building..."
+                ? "Login to start building..."
                 : canSubmit
                   ? (chatHistory.length > 0 ? "Refine this object..." : "Create a glowing portal...")
                   : "Configure API settings first!"

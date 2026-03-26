@@ -96,7 +96,7 @@ export function CodeEditorActions({ code, userId, glyphConnected, onSaved }: { c
           )}
           {glyphNudge && (
             <div className="px-4 py-2 border-b bg-amber-950/20 border-amber-500/15 flex items-center gap-2">
-              <p className="text-[10px] text-amber-300 font-mono">Connect Glyph to save under your account</p>
+              <p className="text-[10px] text-amber-300 font-mono">Login to save under your account</p>
             </div>
           )}
         </div>

@@ -291,7 +291,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
           ) : (
             <div className="border-t border-white/[0.06] px-4 py-3 shrink-0">
               <p className="text-[10px] text-amber-300/80 font-mono text-center">
-                Connect Glyph to chat in the Otherside
+                Login to chat in the Otherside
               </p>
             </div>
           )}

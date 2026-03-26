@@ -102,7 +102,7 @@ export function WalletButton({
         className="btn-otherside-outline flex items-center gap-2 px-4 py-1.5 text-[10px] tracking-[0.12em]"
       >
         <Wallet className="w-3.5 h-3.5" />
-        CONNECT GLYPH
+        LOGIN
       </button>
     </div>
   );
