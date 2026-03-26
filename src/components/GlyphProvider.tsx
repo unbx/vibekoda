@@ -4,7 +4,7 @@ import { GlyphWalletProvider } from "@use-glyph/sdk-react";
 
 export function GlyphProvider({ children }: { children: React.ReactNode }) {
   return (
-    <GlyphWalletProvider>
+    <GlyphWalletProvider askForSignature={false}>
       {children}
     </GlyphWalletProvider>
   );

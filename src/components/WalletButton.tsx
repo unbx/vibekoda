@@ -3,15 +3,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { Wallet, LogOut, Loader2, AlertTriangle, RotateCcw } from "lucide-react";
+import { useGlyph } from "@use-glyph/sdk-react";
+import { Wallet, LogOut, Loader2, AlertTriangle, RotateCcw, UserCheck } from "lucide-react";
 
 export function WalletButton({ onExposeActions, displayName }: { onExposeActions?: (actions: { connect: () => void; disconnect: () => void }) => void; displayName?: string | null } = {}) {
   const { address, isConnected, isConnecting } = useAccount();
   const { connectAsync, connectors } = useConnect();
   const { disconnectAsync } = useDisconnect();
+  const { login, authenticated } = useGlyph();
   const [error, setError] = useState<string | null>(null);
   const [failCount, setFailCount] = useState(0);
   const [connecting, setConnecting] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
 
   const shortAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null;
 
@@ -63,13 +66,45 @@ export function WalletButton({ onExposeActions, displayName }: { onExposeActions
     }
   }, [onExposeActions, handleConnect, handleDisconnect]);
 
+  const handleGlyphSignIn = useCallback(() => {
+    setSigningIn(true);
+    try {
+      login();
+    } catch {
+      // ignore — popup may still open
+    }
+    // Reset after a delay (Privy popup is async)
+    setTimeout(() => setSigningIn(false), 3000);
+  }, [login]);
+
+  // Auto-clear signing-in state when authenticated
+  useEffect(() => {
+    if (authenticated) setSigningIn(false);
+  }, [authenticated]);
+
   if (isConnected && address) {
+    const needsGlyphSignIn = !displayName && !authenticated;
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--panel-border)] bg-[var(--primary)]/10 text-xs font-mono text-[var(--primary-light)]">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          <span className={`w-1.5 h-1.5 rounded-full ${displayName ? "bg-green-400" : "bg-amber-400"} animate-pulse`} />
           {displayName || shortAddr}
         </div>
+        {needsGlyphSignIn && (
+          <button
+            onClick={handleGlyphSignIn}
+            disabled={signingIn}
+            className="btn-otherside-outline flex items-center gap-1.5 px-3 py-1 text-[9px] tracking-[0.1em]"
+            title="Sign in to Glyph to show your username"
+          >
+            {signingIn ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <UserCheck className="w-3 h-3" />
+            )}
+            {signingIn ? "SIGNING IN..." : "SIGN IN TO GLYPH"}
+          </button>
+        )}
         <button
           onClick={handleDisconnect}
           className="p-1.5 hover:bg-white/5 rounded-full transition-colors text-[var(--text-muted)] hover:text-white"
