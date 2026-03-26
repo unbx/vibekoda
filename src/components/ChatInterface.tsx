@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Settings, CheckCircle2, Sparkles, Loader2, Plus, User, X, Zap, AlertTriangle, Wallet, ArrowRight } from "lucide-react";
+import { Settings, CheckCircle2, Sparkles, Loader2, Plus, User, X, Zap, AlertTriangle, Wallet, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Message, DemoUsage } from "@/lib/ai";
 
@@ -17,7 +17,9 @@ interface ChatInterfaceProps {
   onNewObject: () => void;
   userId: string;
   glyphConnected: boolean;
+  glyphVerified?: boolean;
   onConnectGlyph?: () => void;
+  onVerifyGlyph?: () => void;
 }
 
 interface ChatBubble {
@@ -166,7 +168,7 @@ function randomInterval(): number {
   return 2500 + Math.floor(Math.random() * 2500);
 }
 
-export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, glyphConnected, onConnectGlyph }: ChatInterfaceProps) {
+export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, glyphConnected, glyphVerified, onConnectGlyph, onVerifyGlyph }: ChatInterfaceProps) {
   const [prompt, setPrompt] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showApiNudge, setShowApiNudge] = useState(false);
@@ -587,7 +589,7 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
         )}
       </AnimatePresence>
 
-      {/* Glyph Connection Nudge (Demo mode only) */}
+      {/* Glyph Connection Nudge (Demo mode only) — Step 1: Connect */}
       <AnimatePresence>
         {demoNeedsGlyph && (
           <motion.div
@@ -612,6 +614,38 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
               >
                 <Wallet className="w-3 h-3" />
                 CONNECT GLYPH
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Glyph Verify Nudge (Demo mode, wallet connected but not verified) — Step 2: Sign */}
+      <AnimatePresence>
+        {isDemo && glyphConnected && !glyphVerified && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-4 py-3 bg-green-950/20 border-t border-green-500/15 shrink-0 space-y-2"
+          >
+            <div className="flex items-start gap-2">
+              <ShieldCheck className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[11px] text-green-300 font-semibold">Verify your Glyph identity</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono">
+                  Sign a message to confirm your Glyph username.
+                </p>
+              </div>
+            </div>
+            {onVerifyGlyph && (
+              <button
+                onClick={onVerifyGlyph}
+                className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl border-green-500/30 hover:border-green-400/50"
+              >
+                <ShieldCheck className="w-3 h-3 text-green-400" />
+                SIGN &amp; CONTINUE
                 <ArrowRight className="w-3 h-3" />
               </button>
             )}

@@ -12,10 +12,11 @@ export function WalletButton({
   onExposeActions?: (actions: {
     connect: () => void;
     disconnect: () => void;
+    verify: () => void;
   }) => void;
   displayName?: string | null;
 } = {}) {
-  const { login, logout, authenticated, ready, user } = useGlyph();
+  const { login, logout, authenticated, user } = useGlyph();
   const { connect, disconnect: nativeDisconnect } = useNativeGlyphConnection();
   const { isConnected, address } = useAccount();
 
@@ -38,12 +39,16 @@ export function WalletButton({
     nativeDisconnect();
   }, [logout, nativeDisconnect]);
 
-  // Expose connect/disconnect to parent
+  // Expose connect/disconnect/verify to parent
   useEffect(() => {
     if (onExposeActions) {
-      onExposeActions({ connect: handleConnect, disconnect: handleDisconnect });
+      onExposeActions({
+        connect: handleConnect,
+        disconnect: handleDisconnect,
+        verify: handleVerify,
+      });
     }
-  }, [onExposeActions, handleConnect, handleDisconnect]);
+  }, [onExposeActions, handleConnect, handleDisconnect, handleVerify]);
 
   // ── State 3: Fully authenticated with Glyph ──
   if (authenticated && user) {
@@ -87,19 +92,17 @@ export function WalletButton({
   }
 
   // ── State 1: Not connected ──
+  // Note: Don't gate on useGlyph().ready — the EIP1193 strategy's ready state
+  // can stay false when Privy API returns 403 (origin not whitelisted).
+  // The connect() from useNativeGlyphConnection works regardless.
   return (
     <div className="flex items-center gap-2">
       <button
         onClick={handleConnect}
-        disabled={!ready}
         className="btn-otherside-outline flex items-center gap-2 px-4 py-1.5 text-[10px] tracking-[0.12em]"
       >
-        {!ready ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <Wallet className="w-3.5 h-3.5" />
-        )}
-        {!ready ? "LOADING..." : "CONNECT GLYPH"}
+        <Wallet className="w-3.5 h-3.5" />
+        CONNECT GLYPH
       </button>
     </div>
   );

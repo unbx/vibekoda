@@ -47,11 +47,12 @@ export default function Home() {
   const [codeCollapsed, setCodeCollapsed] = useState(false);
   const [isLeftOpen, setIsLeftOpen] = useState(true);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("viewer");
-  const [glyphActions, setGlyphActions] = useState<{ connect: () => void; disconnect: () => void } | null>(null);
+  const [glyphActions, setGlyphActions] = useState<{ connect: () => void; disconnect: () => void; verify: () => void } | null>(null);
   const userId = glyphUsername || walletAddress || localUserId;
   const glyphConnected = !!walletAddress;
+  const glyphVerified = !!glyphUsername;
 
-  const handleGlyphActions = useCallback((actions: { connect: () => void; disconnect: () => void }) => {
+  const handleGlyphActions = useCallback((actions: { connect: () => void; disconnect: () => void; verify: () => void }) => {
     setGlyphActions(actions);
   }, []);
 
@@ -191,7 +192,7 @@ export default function Home() {
               {/* Content area */}
               <div className="flex-1 overflow-hidden">
                 {leftTab === "build" ? (
-                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} userId={userId} glyphConnected={glyphConnected} onConnectGlyph={glyphActions?.connect} />
+                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} userId={userId} glyphConnected={glyphConnected} glyphVerified={glyphVerified} onConnectGlyph={glyphActions?.connect} onVerifyGlyph={glyphActions?.verify} />
                 ) : (
                   <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
                 )}
