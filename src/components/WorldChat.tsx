@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, RefreshCw, Radio, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Send, RefreshCw, Radio, Loader2, ChevronLeft, ChevronRight, BarChart3, Users, MessageSquare, TrendingUp } from "lucide-react";
 
 type World = "SWAMP" | "NEXUS";
 
@@ -13,18 +13,76 @@ interface ChatMessage {
   isBot?: boolean;
 }
 
+export interface ChatAnalytics {
+  messageCount: number;
+  uniqueUsers: number;
+  topUsers: { name: string; count: number }[];
+  trendingKeywords: string[];
+}
+
 interface WorldChatProps {
   currentMmlDescription?: string;
   glyphUsername?: string | null;
   glyphConnected?: boolean;
+  onAnalyticsUpdate?: (analytics: ChatAnalytics) => void;
 }
 
 const PROXY_URL = "/api/world-chat";
 const POLL_INTERVAL = 8000;
 
-export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected }: WorldChatProps) {
+// Stop-words to filter out of trending keywords
+const STOP_WORDS = new Set([
+  "the","a","an","is","are","was","were","be","been","being","have","has","had",
+  "do","does","did","will","would","could","should","may","might","shall","can",
+  "i","you","he","she","it","we","they","me","him","her","us","them","my","your",
+  "his","its","our","their","this","that","these","those","am","in","on","at","to",
+  "for","of","with","and","but","or","not","no","so","if","then","than","too","very",
+  "just","about","up","out","all","what","when","where","how","who","which","there",
+  "here","from","by","as","into","like","get","got","lol","lmao","yeah","yea","yes",
+  "no","ok","okay","oh","hey","hi","hello","yo","bruh","bro","gonna","gotta","dont",
+  "im","ive","its","thats","whats","haha","hehe","omg","wow","pls","plz","thx","ty",
+]);
+
+function computeAnalytics(messages: ChatMessage[]): ChatAnalytics {
+  const userCounts: Record<string, number> = {};
+  const wordCounts: Record<string, number> = {};
+
+  for (const msg of messages) {
+    userCounts[msg.username] = (userCounts[msg.username] || 0) + 1;
+
+    // Tokenize and count meaningful words (3+ chars, not stop-words)
+    const words = msg.message.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
+    for (const w of words) {
+      if (w.length >= 3 && !STOP_WORDS.has(w)) {
+        wordCounts[w] = (wordCounts[w] || 0) + 1;
+      }
+    }
+  }
+
+  const topUsers = Object.entries(userCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
+  // Only surface words that appear 2+ times
+  const trendingKeywords = Object.entries(wordCounts)
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([word]) => word);
+
+  return {
+    messageCount: messages.length,
+    uniqueUsers: Object.keys(userCounts).length,
+    topUsers,
+    trendingKeywords,
+  };
+}
+
+export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected, onAnalyticsUpdate }: WorldChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
@@ -41,6 +99,14 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Compute analytics from messages
+  const analytics = useMemo(() => computeAnalytics(messages), [messages]);
+
+  // Notify parent of analytics updates (for dynamic suggestion chips)
+  useEffect(() => {
+    onAnalyticsUpdate?.(analytics);
+  }, [analytics, onAnalyticsUpdate]);
 
   const fetchChat = useCallback(async (selectedWorld: World, silent = false) => {
     if (!silent) setIsLoading(true);
@@ -231,14 +297,71 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
             <span className="text-[10px] text-[var(--text-muted)] font-mono">
               {lastUpdated ? `Updated ${timeAgo(lastUpdated.toISOString())}` : "Connecting..."}
             </span>
-            <button
-              onClick={() => fetchChat(world)}
-              disabled={isLoading}
-              className="text-[var(--text-muted)] hover:text-[var(--primary-light)] transition-colors"
-            >
-              <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAnalytics(a => !a)}
+                className={`transition-colors ${showAnalytics ? "text-[var(--accent-pink)]" : "text-[var(--text-muted)] hover:text-[var(--primary-light)]"}`}
+                title="Toggle analytics"
+              >
+                <BarChart3 className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => fetchChat(world)}
+                disabled={isLoading}
+                className="text-[var(--text-muted)] hover:text-[var(--primary-light)] transition-colors"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
+            </div>
           </div>
+
+          {/* Analytics Panel — compact, toggleable */}
+          {showAnalytics && messages.length > 0 && (
+            <div className="border-b border-[var(--accent-pink)]/10 bg-[var(--accent-pink)]/[0.03] px-4 py-2.5 shrink-0 space-y-2">
+              {/* Stats row */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <MessageSquare className="w-3 h-3 text-[var(--accent-pink)]" />
+                  <span className="text-[10px] font-mono text-[var(--text-secondary)]">{analytics.messageCount}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-3 h-3 text-[var(--primary)]" />
+                  <span className="text-[10px] font-mono text-[var(--text-secondary)]">{analytics.uniqueUsers}</span>
+                </div>
+              </div>
+
+              {/* Top users */}
+              {analytics.topUsers.length > 0 && (
+                <div>
+                  <span className="text-[8px] font-display-light tracking-[0.15em] text-[var(--text-muted)]">TOP VOICES</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {analytics.topUsers.slice(0, 3).map(u => (
+                      <span key={u.name} className="px-2 py-0.5 text-[9px] font-mono rounded-full bg-[var(--primary)]/10 text-[var(--primary-light)] border border-[var(--primary)]/15">
+                        {u.name} <span className="text-[var(--text-muted)]">({u.count})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Trending keywords */}
+              {analytics.trendingKeywords.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="w-2.5 h-2.5 text-[var(--accent-pink)]" />
+                    <span className="text-[8px] font-display-light tracking-[0.15em] text-[var(--text-muted)]">TRENDING</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {analytics.trendingKeywords.map(kw => (
+                      <span key={kw} className="px-2 py-0.5 text-[9px] font-mono rounded-full bg-[var(--accent-pink)]/10 text-[var(--accent-pink)] border border-[var(--accent-pink)]/15">
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Messages — oldest at top, newest at bottom */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2">

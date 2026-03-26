@@ -5,7 +5,7 @@ import { ChatInterface } from "@/components/ChatInterface";
 import { CodeEditor, CodeEditorActions } from "@/components/CodeEditor";
 import { ScenePreview } from "@/components/ScenePreview";
 import { GalleryPanel } from "@/components/GalleryPanel";
-import { WorldChat } from "@/components/WorldChat";
+import { WorldChat, type ChatAnalytics } from "@/components/WorldChat";
 import { generateMML, generateMMLDemo, DEMO_MML } from "@/lib/ai";
 import type { Message, DemoUsage } from "@/lib/ai";
 import { SetupPanel } from "@/components/SetupPanel";
@@ -48,6 +48,7 @@ export default function Home() {
   const [isLeftOpen, setIsLeftOpen] = useState(true);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("viewer");
   const [glyphActions, setGlyphActions] = useState<{ connect: () => void; disconnect: () => void; verify: () => void } | null>(null);
+  const [chatAnalytics, setChatAnalytics] = useState<ChatAnalytics | null>(null);
   const userId = glyphUsername || walletAddress || localUserId;
   const glyphConnected = !!walletAddress;
   const glyphVerified = !!glyphUsername;
@@ -62,6 +63,10 @@ export default function Home() {
 
   const handleGlyphUsername = useCallback((name: string | null) => {
     setGlyphUsername(name);
+  }, []);
+
+  const handleAnalyticsUpdate = useCallback((analytics: ChatAnalytics) => {
+    setChatAnalytics(analytics);
   }, []);
 
   useEffect(() => {
@@ -192,7 +197,7 @@ export default function Home() {
               {/* Content area */}
               <div className="flex-1 overflow-hidden">
                 {leftTab === "build" ? (
-                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} userId={userId} glyphConnected={glyphConnected} glyphVerified={glyphVerified} onConnectGlyph={glyphActions?.connect} onVerifyGlyph={glyphActions?.verify} />
+                  <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} onNewObject={handleNewObject} userId={userId} glyphConnected={glyphConnected} glyphVerified={glyphVerified} onConnectGlyph={glyphActions?.connect} onVerifyGlyph={glyphActions?.verify} trendingKeywords={chatAnalytics?.trendingKeywords} />
                 ) : (
                   <GalleryPanel userId={userId} onLoad={handleLoadFromGallery} />
                 )}
@@ -303,6 +308,7 @@ export default function Home() {
             currentMmlDescription={mmlCode}
             glyphUsername={glyphUsername}
             glyphConnected={glyphConnected}
+            onAnalyticsUpdate={handleAnalyticsUpdate}
           />
         </div>
       </div>

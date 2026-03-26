@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Settings, CheckCircle2, Sparkles, Loader2, Plus, User, X, Zap, AlertTriangle, Wallet, ArrowRight, ShieldCheck } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Settings, CheckCircle2, Sparkles, Loader2, Plus, User, X, Zap, AlertTriangle, Wallet, ArrowRight, ShieldCheck, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Message, DemoUsage } from "@/lib/ai";
 
@@ -20,6 +20,7 @@ interface ChatInterfaceProps {
   glyphVerified?: boolean;
   onConnectGlyph?: () => void;
   onVerifyGlyph?: () => void;
+  trendingKeywords?: string[];
 }
 
 interface ChatBubble {
@@ -168,7 +169,26 @@ function randomInterval(): number {
   return 2500 + Math.floor(Math.random() * 2500);
 }
 
-export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, glyphConnected, glyphVerified, onConnectGlyph, onVerifyGlyph }: ChatInterfaceProps) {
+// Default suggestion chips when no trending data is available
+const DEFAULT_SUGGESTIONS = [
+  { label: "Glowing Portal", prompt: "Create a glowing neon portal with animated rings" },
+  { label: "Floating Island", prompt: "Build a floating island with crystals and waterfalls" },
+  { label: "Neon Sign", prompt: "Make a cyberpunk neon sign that says OTHERSIDE" },
+  { label: "Treasure Chest", prompt: "Build an animated treasure chest with gold glow" },
+  { label: "Koda Shrine", prompt: "Create a mystical Koda shrine with candles and runes" },
+  { label: "Obstacle Course", prompt: "Design a colorful obstacle course with ramps and tunnels" },
+];
+
+// Maps trending keywords to MML build prompts
+function keywordToSuggestion(keyword: string): { label: string; prompt: string } {
+  const kw = keyword.toLowerCase();
+  return {
+    label: keyword.charAt(0).toUpperCase() + keyword.slice(1),
+    prompt: `Create something inspired by "${kw}" — make it creative, glowing, and animated`,
+  };
+}
+
+export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, glyphConnected, glyphVerified, onConnectGlyph, onVerifyGlyph, trendingKeywords }: ChatInterfaceProps) {
   const [prompt, setPrompt] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showApiNudge, setShowApiNudge] = useState(false);
@@ -679,28 +699,43 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
         )}
       </AnimatePresence>
 
-      {/* Suggestion Chips — show when logged in, no chat history, and not exhausted */}
-      {canSubmit && chatHistory.length === 0 && !demoExhausted && (
-        <div className="px-3 pt-2 pb-0 shrink-0 flex flex-wrap gap-1.5">
-          {[
-            { label: "Glowing Portal", prompt: "Create a glowing neon portal with animated rings" },
-            { label: "Floating Island", prompt: "Build a floating island with crystals and waterfalls" },
-            { label: "Neon Sign", prompt: "Make a cyberpunk neon sign that says OTHERSIDE" },
-            { label: "Treasure Chest", prompt: "Build an animated treasure chest with gold glow" },
-            { label: "Koda Shrine", prompt: "Create a mystical Koda shrine with candles and runes" },
-            { label: "Obstacle Course", prompt: "Design a colorful obstacle course with ramps and tunnels" },
-          ].map(({ label, prompt: p }) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => { setPrompt(p); }}
-              className="px-2.5 py-1.5 text-[10px] font-display-light tracking-[0.08em] rounded-full border border-[var(--primary)]/20 bg-[var(--primary)]/5 text-[var(--primary-light)] hover:bg-[var(--primary)]/15 hover:border-[var(--primary)]/40 transition-all"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Suggestion Chips — dynamic from World Chat trends + static fallbacks */}
+      {canSubmit && chatHistory.length === 0 && !demoExhausted && (() => {
+        const hasTrending = trendingKeywords && trendingKeywords.length > 0;
+        const trendingSuggestions = hasTrending
+          ? trendingKeywords.slice(0, 3).map(keywordToSuggestion)
+          : [];
+        // Mix: up to 3 trending + fill with defaults to 6 total
+        const defaultSlice = DEFAULT_SUGGESTIONS.slice(0, 6 - trendingSuggestions.length);
+        const allSuggestions = [...trendingSuggestions, ...defaultSlice];
+
+        return (
+          <div className="px-3 pt-2 pb-0 shrink-0 space-y-1.5">
+            {hasTrending && (
+              <div className="flex items-center gap-1 px-0.5">
+                <TrendingUp className="w-2.5 h-2.5 text-[var(--accent-pink)]" />
+                <span className="text-[8px] font-display-light tracking-[0.15em] text-[var(--text-muted)]">TRENDING IN WORLD CHAT</span>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-1.5">
+              {allSuggestions.map(({ label, prompt: p }, i) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => { setPrompt(p); }}
+                  className={`px-2.5 py-1.5 text-[10px] font-display-light tracking-[0.08em] rounded-full border transition-all ${
+                    i < trendingSuggestions.length
+                      ? "border-[var(--accent-pink)]/25 bg-[var(--accent-pink)]/8 text-[var(--accent-pink)] hover:bg-[var(--accent-pink)]/15 hover:border-[var(--accent-pink)]/40"
+                      : "border-[var(--primary)]/20 bg-[var(--primary)]/5 text-[var(--primary-light)] hover:bg-[var(--primary)]/15 hover:border-[var(--primary)]/40"
+                  }`}
+                >
+                  {i < trendingSuggestions.length && "🔥 "}{label}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Input Bar */}
       <div className="p-3 border-t border-white/[0.06] shrink-0">
