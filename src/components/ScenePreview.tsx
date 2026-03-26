@@ -106,10 +106,10 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x060608);
-    scene.fog = new THREE.Fog(0x060608, 60, 200);
+    scene.fog = new THREE.Fog(0x060608, 200, 800);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 500);
+    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 2000);
     camera.position.set(4, 3, 6);
     camera.lookAt(0, 1, 0);
     cameraRef.current = camera;
@@ -276,19 +276,19 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
 
     if (lighting === "studio") {
       scene.background = new THREE.Color(0xc8d8e8);
-      scene.fog = new THREE.Fog(0xc8d8e8, 60, 200);
+      scene.fog = new THREE.Fog(0xc8d8e8, 200, 800);
       if (ambient) { ambient.color.set(0xffffff); ambient.intensity = 1.2; }
       if (dirLight) { dirLight.color.set(0xffffff); dirLight.intensity = 1.5; dirLight.position.set(5, 10, 5); }
       if (fillLight) { fillLight.color.set(0x8888ff); fillLight.intensity = 0.4; }
     } else if (lighting === "sunset") {
       scene.background = new THREE.Color(0x120810);
-      scene.fog = new THREE.Fog(0x120810, 60, 200);
+      scene.fog = new THREE.Fog(0x120810, 200, 800);
       if (ambient) { ambient.color.set(0xffccdd); ambient.intensity = 0.8; }
       if (dirLight) { dirLight.color.set(0xe84bf5); dirLight.intensity = 1.8; dirLight.position.set(-5, 3, 2); }
       if (fillLight) { fillLight.color.set(0xff6644); fillLight.intensity = 0.5; }
     } else if (lighting === "night") {
       scene.background = new THREE.Color(0x030306);
-      scene.fog = new THREE.Fog(0x030306, 60, 200);
+      scene.fog = new THREE.Fog(0x030306, 200, 800);
       if (ambient) { ambient.color.set(0xffaacc); ambient.intensity = 0.5; }
       if (dirLight) { dirLight.color.set(0x4b7bf5); dirLight.intensity = 0.6; dirLight.position.set(3, 8, 3); }
       if (fillLight) { fillLight.color.set(0x6688ff); fillLight.intensity = 0.4; }
