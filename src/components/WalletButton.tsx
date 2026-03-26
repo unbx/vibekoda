@@ -3,23 +3,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAccount } from "wagmi";
 import { useNativeGlyphConnection, useGlyph } from "@use-glyph/sdk-react";
-import { Wallet, LogOut, Loader2, AlertTriangle, RotateCcw } from "lucide-react";
+import { Wallet, LogOut, Loader2, AlertTriangle, RotateCcw, Fingerprint } from "lucide-react";
 
 export function WalletButton({ onExposeActions, displayName }: { onExposeActions?: (actions: { connect: () => void; disconnect: () => void }) => void; displayName?: string | null } = {}) {
   const { address, isConnected, isConnecting } = useAccount();
   const { connect: glyphConnect, disconnect: glyphDisconnect } = useNativeGlyphConnection();
-  const { authenticated } = useGlyph();
+  const { login, authenticated } = useGlyph();
   const [error, setError] = useState<string | null>(null);
   const [failCount, setFailCount] = useState(0);
   const [connecting, setConnecting] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
 
   const shortAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null;
 
+  // Step 1: Connect wallet via Glyph popup
   const handleConnect = useCallback(() => {
     setError(null);
     setConnecting(true);
     try {
-      // Opens a single Glyph popup that handles wallet + auth together
       glyphConnect();
     } catch (err: any) {
       setError("Connection failed. Please try again.");
@@ -28,15 +29,32 @@ export function WalletButton({ onExposeActions, displayName }: { onExposeActions
     }
   }, [glyphConnect]);
 
-  // Clear connecting state when wallet connects or auth completes
+  // Step 2: Sign in to Glyph (user-initiated click → popup won't be blocked)
+  const handleSignIn = useCallback(() => {
+    setSigningIn(true);
+    try {
+      login();
+    } catch {
+      // ignore — popup may still be opening
+    }
+    // Reset after a delay if auth doesn't complete
+    setTimeout(() => setSigningIn(false), 15000);
+  }, [login]);
+
+  // Clear connecting state when wallet connects
   useEffect(() => {
-    if (isConnected || authenticated) {
+    if (isConnected) {
       setConnecting(false);
       setFailCount(0);
     }
-  }, [isConnected, authenticated]);
+  }, [isConnected]);
 
-  // Also clear connecting after a timeout (in case popup was closed without completing)
+  // Clear signing-in state when authenticated
+  useEffect(() => {
+    if (authenticated) setSigningIn(false);
+  }, [authenticated]);
+
+  // Timeout for connecting state (popup closed without completing)
   useEffect(() => {
     if (!connecting) return;
     const timer = setTimeout(() => setConnecting(false), 30000);
@@ -51,6 +69,7 @@ export function WalletButton({ onExposeActions, displayName }: { onExposeActions
     }
     setError(null);
     setFailCount(0);
+    setSigningIn(false);
   }, [glyphDisconnect]);
 
   // Expose connect/disconnect to parent
@@ -60,13 +79,34 @@ export function WalletButton({ onExposeActions, displayName }: { onExposeActions
     }
   }, [onExposeActions, handleConnect, handleDisconnect]);
 
+  // ── Connected state ──
   if (isConnected && address) {
+    const needsSignIn = !displayName && !authenticated;
     return (
       <div className="flex items-center gap-2">
+        {/* Address / username pill */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--panel-border)] bg-[var(--primary)]/10 text-xs font-mono text-[var(--primary-light)]">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          <span className={`w-1.5 h-1.5 rounded-full ${displayName ? "bg-green-400" : "bg-amber-400"} animate-pulse`} />
           {displayName || shortAddr}
         </div>
+
+        {/* Step 2: Sign in to resolve username */}
+        {needsSignIn && (
+          <button
+            onClick={handleSignIn}
+            disabled={signingIn}
+            className="btn-otherside-outline flex items-center gap-1.5 px-3 py-1 text-[9px] tracking-[0.1em]"
+            title="Sign in to show your Glyph username"
+          >
+            {signingIn ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Fingerprint className="w-3 h-3" />
+            )}
+            {signingIn ? "SIGNING..." : "VERIFY GLYPH"}
+          </button>
+        )}
+
         <button
           onClick={handleDisconnect}
           className="p-1.5 hover:bg-white/5 rounded-full transition-colors text-[var(--text-muted)] hover:text-white"
@@ -78,6 +118,7 @@ export function WalletButton({ onExposeActions, displayName }: { onExposeActions
     );
   }
 
+  // ── Disconnected state ──
   return (
     <div className="flex items-center gap-2">
       <button
