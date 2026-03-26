@@ -1,29 +1,28 @@
 "use client";
 
-import {
-  GlyphPrivyProvider,
-  GLYPH_PRIVY_APP_ID,
-} from "@use-glyph/sdk-react";
+import { GlyphWalletProvider } from "@use-glyph/sdk-react";
 
+/**
+ * EIP1193 strategy with askForSignature={false} so we can split the flow
+ * into two user-initiated steps:
+ *   1. connect() from useNativeGlyphConnection → opens wallet popup
+ *   2. login() from useGlyph() → triggers signature/auth (separate user click)
+ *
+ * This avoids browser popup blocking (each popup is user-initiated).
+ *
+ * Once Glyph whitelists vibekoda.nanalifestyle.com in their Privy dashboard,
+ * switch to GlyphPrivyProvider for zero-popup in-page social login:
+ *
+ *   import { GlyphPrivyProvider, GLYPH_PRIVY_APP_ID } from "@use-glyph/sdk-react";
+ *   <GlyphPrivyProvider appId={GLYPH_PRIVY_APP_ID} config={{
+ *     appearance: { theme: "dark" },
+ *     loginMethodsAndOrder: { primary: ["apple", "email", "google", "twitter", "metamask"] },
+ *   }}>
+ */
 export function GlyphProvider({ children }: { children: React.ReactNode }) {
   return (
-    <GlyphPrivyProvider
-      appId={GLYPH_PRIVY_APP_ID}
-      config={{
-        appearance: {
-          theme: "dark",
-        },
-        // NOTE: Custom loginMethodsAndOrder (apple, email, google, twitter, wallet)
-        // is commented out until vibekoda.nanalifestyle.com is whitelisted in Glyph's
-        // Privy dashboard. Without whitelisting, OAuth returns 403 "Origin not allowed".
-        // Once whitelisted, uncomment to enable in-page social login (no popup):
-        //
-        // loginMethodsAndOrder: {
-        //   primary: ["apple", "email", "google", "twitter", "metamask"],
-        // },
-      }}
-    >
+    <GlyphWalletProvider askForSignature={false}>
       {children}
-    </GlyphPrivyProvider>
+    </GlyphWalletProvider>
   );
 }
