@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAccount } from "wagmi";
 import { useGlyph } from "@use-glyph/sdk-react";
 
 interface Props {
@@ -10,27 +9,28 @@ interface Props {
 }
 
 /**
- * Reads the connected wallet address via wagmi, and attempts to
- * resolve the Glyph username via the Glyph SDK context.
+ * Reads the connected wallet address and username from the Glyph SDK context.
+ * With the Privy strategy, both come from the authenticated Glyph user.
  * This component is always dynamically imported with ssr:false.
  */
 export function GlyphUserSync({ onAddress, onUsername }: Props) {
-  const { address, isConnected } = useAccount();
-  const { user, authenticated } = useGlyph();
+  const { user, authenticated, ready } = useGlyph();
 
   useEffect(() => {
-    onAddress(isConnected && address ? address : undefined);
-  }, [isConnected, address, onAddress]);
+    if (ready && authenticated && user?.evmWallet) {
+      onAddress(user.evmWallet);
+    } else {
+      onAddress(undefined);
+    }
+  }, [ready, authenticated, user, onAddress]);
 
-  // Try to resolve Glyph username from the SDK context
   useEffect(() => {
-    const u = user as any;
-    if (authenticated && u?.name) {
-      onUsername?.(u.name);
+    if (ready && authenticated && user?.name) {
+      onUsername?.(user.name);
     } else {
       onUsername?.(null);
     }
-  }, [authenticated, user, onUsername]);
+  }, [ready, authenticated, user, onUsername]);
 
   return null;
 }
