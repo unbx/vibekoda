@@ -3,7 +3,6 @@
 import {
   GlyphPrivyProvider,
   GLYPH_PRIVY_APP_ID,
-  GLYPH_APP_LOGIN_METHOD,
 } from "@use-glyph/sdk-react";
 
 export function GlyphProvider({ children }: { children: React.ReactNode }) {
@@ -15,7 +14,7 @@ export function GlyphProvider({ children }: { children: React.ReactNode }) {
           theme: "dark",
         },
         loginMethodsAndOrder: {
-          primary: [GLYPH_APP_LOGIN_METHOD],
+          primary: ["apple", "email", "google", "twitter", "metamask"],
         },
       }}
     >
