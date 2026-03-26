@@ -3,6 +3,7 @@
 import { useRef, useEffect, useCallback } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 interface ScenePreviewProps {
   mmlCode: string;
@@ -98,6 +99,7 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
   const animationsRef = useRef<AnimConfig[]>([]);
   const clockRef = useRef<THREE.Clock | null>(null);
   const textureLoaderRef = useRef(new THREE.TextureLoader());
+  const gltfLoaderRef = useRef(new GLTFLoader());
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -236,6 +238,20 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
           mat.transparent = true;
           mat.opacity = value;
         }
+      }
+
+      // Update any GLTF animation mixers on loaded models
+      // Use elapsed difference instead of getDelta() to avoid resetting the clock for getElapsedTime()
+      const nowSec = clock.getElapsedTime();
+      const mixerDelta = nowSec - ((animate as any).__lastTime || 0);
+      (animate as any).__lastTime = nowSec;
+      const group = objectGroupRef.current;
+      if (group) {
+        group.traverse((child) => {
+          if ((child as any).__mixer) {
+            (child as any).__mixer.update(mixerDelta);
+          }
+        });
       }
 
       controls.update();
@@ -474,12 +490,88 @@ export function ScenePreview({ mmlCode, lighting = "studio" }: ScenePreviewProps
 
         } else if (tag === "m-model") {
           const container = new THREE.Group();
-          const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-          const mat = new THREE.MeshStandardMaterial({ color: 0x44aaff, wireframe: true, transparent: true, opacity: 0.6 });
-          container.add(new THREE.Mesh(geo, mat));
-          const label = createLabelSprite("MODEL", 0.15, "#44aaff");
+          const src = xmlNode.getAttribute("src");
+
+          // Show a loading placeholder first
+          const placeholderGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+          const placeholderMat = new THREE.MeshStandardMaterial({ color: 0x44aaff, wireframe: true, transparent: true, opacity: 0.4 });
+          const placeholder = new THREE.Mesh(placeholderGeo, placeholderMat);
+          placeholder.name = "__model_placeholder";
+          container.add(placeholder);
+          const label = createLabelSprite("LOADING...", 0.12, "#44aaff");
           label.position.set(0, 0.7, 0);
+          label.name = "__model_label";
           container.add(label);
+
+          if (src) {
+            gltfLoaderRef.current.load(
+              src,
+              (gltf) => {
+                // Remove placeholder and label once model loads
+                const ph = container.getObjectByName("__model_placeholder");
+                const lb = container.getObjectByName("__model_label");
+                if (ph) { container.remove(ph); (ph as THREE.Mesh).geometry?.dispose(); ((ph as THREE.Mesh).material as THREE.Material)?.dispose(); }
+                if (lb) { container.remove(lb); }
+
+                const model = gltf.scene;
+                // Auto-scale model to fit within a reasonable bounding box
+                const bbox = new THREE.Box3().setFromObject(model);
+                const size = bbox.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                if (maxDim > 0) {
+                  const targetSize = 2;
+                  const autoScale = targetSize / maxDim;
+                  model.scale.multiplyScalar(autoScale);
+                }
+                // Center the model on its bounding box
+                const centeredBox = new THREE.Box3().setFromObject(model);
+                const center = centeredBox.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+                model.position.y += centeredBox.getSize(new THREE.Vector3()).y / 2;
+
+                container.add(model);
+
+                // Play embedded animations if any
+                if (gltf.animations && gltf.animations.length > 0) {
+                  const mixer = new THREE.AnimationMixer(model);
+                  gltf.animations.forEach((clip) => {
+                    mixer.clipAction(clip).play();
+                  });
+                  // Store mixer on container for the animation loop to update
+                  (container as any).__mixer = mixer;
+                }
+
+                // Re-frame camera after model loads
+                const camera = cameraRef.current;
+                const controls = controlsRef.current;
+                const group = objectGroupRef.current;
+                if (camera && controls && group) {
+                  const box = new THREE.Box3().setFromObject(group);
+                  const grpCenter = box.getCenter(new THREE.Vector3());
+                  const grpSize = box.getSize(new THREE.Vector3());
+                  const dist = Math.max(Math.max(grpSize.x, grpSize.y, grpSize.z) * 1.8, 5);
+                  controls.target.set(grpCenter.x, grpCenter.y, grpCenter.z);
+                  camera.position.set(grpCenter.x + dist * 0.6, grpCenter.y + dist * 0.4, grpCenter.z + dist * 0.8);
+                  controls.update();
+                }
+              },
+              undefined,
+              (error) => {
+                console.warn("GLB load error:", error);
+                // Update label to show error
+                const lb = container.getObjectByName("__model_label");
+                if (lb) { container.remove(lb); }
+                const errLabel = createLabelSprite("LOAD FAILED", 0.12, "#ff4444");
+                errLabel.position.set(0, 0.7, 0);
+                container.add(errLabel);
+                // Change placeholder color to red
+                const ph = container.getObjectByName("__model_placeholder");
+                if (ph && ph instanceof THREE.Mesh) {
+                  (ph.material as THREE.MeshStandardMaterial).color.set(0xff4444);
+                }
+              }
+            );
+          }
           mesh = container;
 
         } else if (tag === "m-character") {
