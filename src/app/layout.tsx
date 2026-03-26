@@ -15,6 +15,18 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
+  openGraph: {
+    title: "VibeKoda Studio — Otherside MML Builder",
+    description: "AI-powered MML builder for the Otherside Vibe Maker",
+    images: [{ url: "/og-image.png" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VibeKoda Studio — Otherside MML Builder",
+    description: "AI-powered MML builder for the Otherside Vibe Maker",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
