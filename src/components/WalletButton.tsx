@@ -5,7 +5,7 @@ import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { Wallet, LogOut, Loader2, AlertTriangle, RotateCcw } from "lucide-react";
 
-export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: { connect: () => void; disconnect: () => void }) => void } = {}) {
+export function WalletButton({ onExposeActions, displayName }: { onExposeActions?: (actions: { connect: () => void; disconnect: () => void }) => void; displayName?: string | null } = {}) {
   const { address, isConnected, isConnecting } = useAccount();
   const { connectAsync, connectors } = useConnect();
   const { disconnectAsync } = useDisconnect();
@@ -68,7 +68,7 @@ export function WalletButton({ onExposeActions }: { onExposeActions?: (actions: 
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--panel-border)] bg-[var(--primary)]/10 text-xs font-mono text-[var(--primary-light)]">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          {shortAddr}
+          {displayName || shortAddr}
         </div>
         <button
           onClick={handleDisconnect}

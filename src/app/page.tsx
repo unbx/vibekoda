@@ -146,7 +146,7 @@ export default function Home() {
 
         {/* Right: Wallet + Setup + Status */}
         <div className="flex items-center gap-3">
-          <WalletButton onExposeActions={handleGlyphActions} />
+          <WalletButton onExposeActions={handleGlyphActions} displayName={glyphUsername} />
           <SetupPanel
             glyphConnected={glyphConnected}
             glyphUsername={glyphUsername}
