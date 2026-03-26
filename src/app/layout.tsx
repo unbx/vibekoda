@@ -11,6 +11,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "VibeKoda Studio — Otherside MML Builder",
   description: "AI-powered MML builder for the Otherside Vibe Maker",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
