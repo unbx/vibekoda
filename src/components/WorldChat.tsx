@@ -226,7 +226,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
     <section
       className={`shrink-0 flex flex-col border-l border-[var(--primary)]/15 bg-[rgba(16,13,28,0.95)] transition-all w-full lg:w-auto ${
         isOpen ? "lg:w-[320px] lg:min-w-[320px] lg:max-w-[320px]" : "lg:w-12"
-      } overflow-hidden flex-1 lg:flex-initial min-h-0`}
+      } overflow-hidden flex-1 lg:flex-initial min-h-0 lg:h-full`}
     >
       {/* Collapsed: vertical label strip with pink gradient pulse (desktop only) */}
       {!isOpen && (
