@@ -82,7 +82,7 @@ function computeAnalytics(messages: ChatMessage[]): ChatAnalytics {
 export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected, onAnalyticsUpdate }: WorldChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(true);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
