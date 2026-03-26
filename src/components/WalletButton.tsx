@@ -35,10 +35,19 @@ export function WalletButton({
   }, [connect]);
 
   // Step 2: Sign message to verify identity & get Glyph username
-  const handleVerify = useCallback(() => {
+  const handleVerify = useCallback(async () => {
     console.log("[Glyph Auth] login() called — waiting for signature...");
+    try {
+      // Pre-check: can we even reach the Glyph nonce endpoint?
+      if (address) {
+        const nonceCheck = await fetch(`https://useglyph.io/api/widget/auth/message/${address}`);
+        console.log("[Glyph Auth] Nonce endpoint status:", nonceCheck.status, await nonceCheck.text().catch(() => ""));
+      }
+    } catch (e) {
+      console.error("[Glyph Auth] Nonce endpoint unreachable:", e);
+    }
     login();
-  }, [login]);
+  }, [login, address]);
 
   const handleDisconnect = useCallback(() => {
     logout();
