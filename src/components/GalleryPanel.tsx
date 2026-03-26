@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { LayoutGrid, Copy, Check, ExternalLink, Loader2, RefreshCw, Pencil } from "lucide-react";
+import { LayoutGrid, Copy, Check, ExternalLink, Loader2, RefreshCw, Pencil, Trash2 } from "lucide-react";
 
 interface MMLObject {
   key: string;
@@ -56,6 +56,8 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
 
   const fetchObjects = useCallback(async () => {
     if (!userId) return;
@@ -105,6 +107,32 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
     }
     setEditingKey(null);
     setEditValue("");
+  };
+
+  const handleDelete = async (obj: MMLObject) => {
+    if (confirmDeleteKey !== obj.key) {
+      setConfirmDeleteKey(obj.key);
+      setTimeout(() => setConfirmDeleteKey(prev => prev === obj.key ? null : prev), 3000);
+      return;
+    }
+    setDeletingKey(obj.key);
+    setConfirmDeleteKey(null);
+    try {
+      const res = await fetch("/api/delete-mml", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: obj.key, userId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Delete failed.");
+      }
+      setObjects(prev => prev.filter(o => o.key !== obj.key));
+    } catch (err: any) {
+      setError(err.message || "Could not delete object.");
+    } finally {
+      setDeletingKey(null);
+    }
   };
 
   return (
@@ -194,6 +222,22 @@ export function GalleryPanel({ userId, onLoad }: GalleryPanelProps) {
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                 </a>
+                <button
+                  onClick={() => handleDelete(obj)}
+                  disabled={deletingKey === obj.key}
+                  title={confirmDeleteKey === obj.key ? "Click again to confirm delete" : "Delete object"}
+                  className={`p-1.5 border rounded-lg transition-all ${
+                    confirmDeleteKey === obj.key
+                      ? "bg-red-950/50 border-red-500/40 hover:bg-red-900/50"
+                      : "bg-white/5 hover:bg-red-950/30 border-white/[0.06] hover:border-red-500/30"
+                  }`}
+                >
+                  {deletingKey === obj.key ? (
+                    <Loader2 className="w-3.5 h-3.5 text-red-400 animate-spin" />
+                  ) : (
+                    <Trash2 className={`w-3.5 h-3.5 ${confirmDeleteKey === obj.key ? "text-red-400" : "text-[var(--text-muted)]"}`} />
+                  )}
+                </button>
               </div>
               <a
                 href="https://otherside.xyz/mmls"
