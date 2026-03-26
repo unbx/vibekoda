@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
+// Disable Next.js caching so the GET handler always returns fresh usage data from S3
+export const dynamic = "force-dynamic";
+
 /**
  * /api/generate-mml — Server-side proxy for DEMO mode.
  *
