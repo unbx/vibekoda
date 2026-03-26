@@ -15,8 +15,6 @@ interface Props {
  * With EIP1193 strategy (two-step flow):
  *   - Address comes from wagmi (available after Step 1: wallet connect)
  *   - Username comes from useGlyph user (available after Step 2: verify/sign)
- *   - Falls back to short wallet address if Glyph auth doesn't complete
- *     (e.g. domain not whitelisted in Privy dashboard)
  */
 export function GlyphUserSync({ onAddress, onUsername }: Props) {
   const { user, authenticated, ready } = useGlyph();
@@ -32,19 +30,13 @@ export function GlyphUserSync({ onAddress, onUsername }: Props) {
   }, [isConnected, address, onAddress]);
 
   // Username from Glyph — available after authentication (Step 2)
-  // Falls back to short address if Glyph SDK never authenticates
   useEffect(() => {
     if (ready && authenticated && user?.name) {
       onUsername?.(user.name);
-    } else if (isConnected && address) {
-      // Fallback: use short wallet address as display name so the app
-      // doesn't get stuck waiting for Glyph auth that may never come
-      const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
-      onUsername?.(shortAddr);
     } else {
       onUsername?.(null);
     }
-  }, [ready, authenticated, user, isConnected, address, onUsername]);
+  }, [ready, authenticated, user, onUsername]);
 
   return null;
 }
