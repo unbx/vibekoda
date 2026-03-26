@@ -7,7 +7,7 @@ import { ScenePreview } from "@/components/ScenePreview";
 import { GalleryPanel } from "@/components/GalleryPanel";
 import { WorldChat, type ChatAnalytics } from "@/components/WorldChat";
 import { generateMML, generateMMLDemo, DEMO_MML } from "@/lib/ai";
-import type { Message, DemoUsage } from "@/lib/ai";
+import type { Message, DemoUsage, GLBAssetRef } from "@/lib/ai";
 import { SetupPanel } from "@/components/SetupPanel";
 import { AlertCircle, Lightbulb, Moon, Sunset, Hammer, LayoutGrid, ChevronDown, ChevronUp, ChevronLeft, Radio } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -73,6 +73,20 @@ export default function Home() {
     setLocalUserId(generateUserId());
   }, []);
 
+  // Read uploaded GLB assets from localStorage for the system prompt
+  const getGlbAssets = (): GLBAssetRef[] => {
+    try {
+      const raw = localStorage.getItem("vibekoda_glb_assets");
+      if (!raw) return [];
+      return JSON.parse(raw).map((a: { url: string; filename: string }) => ({
+        url: a.url,
+        filename: a.filename,
+      }));
+    } catch {
+      return [];
+    }
+  };
+
   const handleGenerate = async (
     messages: Message[],
     apiKey: string,
@@ -82,6 +96,7 @@ export default function Home() {
   ) => {
     setIsGenerating(true);
     setError(null);
+    const glbAssets = getGlbAssets();
     try {
       let result: { content: string; mmlCode: string; demo?: DemoUsage };
 
@@ -91,11 +106,12 @@ export default function Home() {
           messages,
           userId,
           demoOpts.conversationId,
-          demoOpts.isNewGeneration
+          demoOpts.isNewGeneration,
+          glbAssets.length > 0 ? glbAssets : undefined
         );
       } else {
         // BYO Agent mode — direct API call
-        result = await generateMML(messages, apiKey, endpoint, model);
+        result = await generateMML(messages, apiKey, endpoint, model, glbAssets.length > 0 ? glbAssets : undefined);
       }
 
       setMmlCode(result.mmlCode);

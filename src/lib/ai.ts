@@ -64,6 +64,32 @@ When you generate or modify an object, ALWAYS:
 - **Rotation**: \`rx\`, \`ry\`, \`rz\` (degrees)
 - **Scale**: \`sx\`, \`sy\`, \`sz\` for non-uniform OR \`scale\` for uniform.`;
 
+export interface GLBAssetRef {
+  url: string;
+  filename: string;
+}
+
+/**
+ * Build the full system prompt, optionally appending a list of
+ * user-uploaded GLB models so Hapa knows they're available.
+ */
+function buildSystemPrompt(glbAssets?: GLBAssetRef[]): string {
+  if (!glbAssets || glbAssets.length === 0) return SYSTEM_PROMPT;
+
+  const assetList = glbAssets
+    .map(a => `- **${a.filename}**: \`${a.url}\``)
+    .join("\n");
+
+  return `${SYSTEM_PROMPT}
+
+## User's Uploaded 3D Models
+The user has uploaded the following GLB models. When they ask you to use one of their models (or say "use my model"), reference the correct URL with \`<m-model src="...">\`. You can combine these with primitives, lights, and animations to build richer scenes.
+
+${assetList}
+
+Example usage: \`<m-model src="https://..." y="0" scale="1"><m-attr-anim attr="ry" start="0" end="360" duration="8000" loop="true"></m-attr-anim></m-model>\``;
+}
+
 export interface DemoUsage {
   generationsUsed: number;
   generationsMax: number;
@@ -87,7 +113,8 @@ export async function generateMMLDemo(
   messages: Message[],
   userId: string,
   conversationId: string,
-  isNewGeneration: boolean
+  isNewGeneration: boolean,
+  glbAssets?: GLBAssetRef[]
 ): Promise<{ content: string; mmlCode: string; demo: DemoUsage }> {
   const userMessages = messages.map(m => ({
     role: m.role as string,
@@ -100,7 +127,7 @@ export async function generateMMLDemo(
     body: JSON.stringify({
       userId,
       messages: userMessages,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(glbAssets),
       conversationId,
       isNewGeneration,
     }),
@@ -133,17 +160,19 @@ export async function generateMML(
   messages: Message[],
   apiKey: string,
   endpoint: string = 'https://api.openai.com/v1/chat/completions',
-  model: string = 'gpt-4o-mini'
+  model: string = 'gpt-4o-mini',
+  glbAssets?: GLBAssetRef[]
 ): Promise<{ content: string; mmlCode: string }> {
   if (!apiKey) {
     throw new Error('Please provide an API key in the settings.');
   }
 
   const isAnthropic = endpoint.includes('anthropic.com');
+  const systemPrompt = buildSystemPrompt(glbAssets);
 
   // Build the full message array with system prompt
   const fullMessages = [
-    { role: "system" as const, content: SYSTEM_PROMPT },
+    { role: "system" as const, content: systemPrompt },
     ...messages
   ];
 
@@ -167,7 +196,7 @@ export async function generateMML(
       body: JSON.stringify({
         model: model || 'claude-opus-4-6',
         max_tokens: 8192,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: userMessages,
         temperature: 0.2
       })
