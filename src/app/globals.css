@@ -46,6 +46,23 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
   overflow: hidden;
+  /* iOS Safari safe area support */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent iOS Safari auto-zoom on input focus (triggers at < 16px) */
+@media screen and (max-width: 1023px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* dvh fallback for older browsers */
+@supports not (height: 100dvh) {
+  .h-dvh {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
 }
 
 /* ─── Display Font (Otherside geometric/blocky headlines) ─── */

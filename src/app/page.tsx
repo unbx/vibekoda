@@ -129,7 +129,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex h-screen w-screen flex-col overflow-hidden bg-[var(--background)]">
+    <main className="flex h-dvh w-screen flex-col overflow-hidden bg-[var(--background)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
 
       {/* ═══════ HEADER — Otherside minimal nav ═══════ */}
       <header className="relative z-40 h-10 lg:h-14 flex items-center justify-between px-3 lg:px-5 border-b border-white/[0.06] bg-[var(--background)] shrink-0">

@@ -106,7 +106,16 @@ export async function POST(req: NextRequest) {
   // ── Usage checks ────────────────────────────────────────────────
   const usage = await getUsage(userId);
 
-  if (isNewGeneration) {
+  // If the client claims this is a refinement but the conversationId is
+  // unknown (not in our refinements map), treat it as a new generation.
+  // This prevents bypassing the generation cap by sending isNewGeneration=false
+  // with a fresh conversationId.
+  const isActuallyNew =
+    isNewGeneration ||
+    !conversationId ||
+    !(conversationId in usage.refinements);
+
+  if (isActuallyNew) {
     if (usage.generations >= DEMO_MAX_GENERATIONS) {
       return NextResponse.json(
         {
@@ -122,7 +131,8 @@ export async function POST(req: NextRequest) {
     if (conversationId) {
       usage.refinements[conversationId] = 0;
     }
-  } else if (conversationId) {
+  } else {
+    // Refinement on a known conversation
     const refinements = usage.refinements[conversationId] ?? 0;
     if (refinements >= DEMO_MAX_REFINEMENTS) {
       return NextResponse.json(

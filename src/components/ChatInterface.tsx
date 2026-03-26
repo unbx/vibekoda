@@ -246,9 +246,11 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
             refinementsUsed: 0,
             refinementsMax: data.refinementsMax,
           });
-          // If already exhausted, show the banner immediately
+          // If already exhausted, show the banner immediately and mark first message
+          // state so the canSubmit check also blocks submission
           if (data.generationsUsed >= data.generationsMax) {
             setDemoExhausted(`You've used all ${data.generationsMax} demo generations. Configure your own API key to keep building!`);
+            setIsFirstMessage(true); // Ensure canSubmit detects exhaustion
           }
         }
       })
@@ -341,7 +343,9 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
 
   const isDemo = provider === "demo";
   const demoNeedsGlyph = isDemo && !glyphConnected;
-  const canSubmit = isDemo ? glyphConnected : !!apiKey;
+  // Block submission when demo is exhausted AND this would be a new generation
+  const demoGenerationsExhausted = isDemo && demoUsage && isFirstMessage && demoUsage.generationsUsed >= demoUsage.generationsMax;
+  const canSubmit = isDemo ? (glyphConnected && !demoGenerationsExhausted) : !!apiKey;
 
   return (
     <div className="flex flex-col h-full w-full relative">
@@ -675,6 +679,29 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
         )}
       </AnimatePresence>
 
+      {/* Suggestion Chips — show when logged in, no chat history, and not exhausted */}
+      {canSubmit && chatHistory.length === 0 && !demoExhausted && (
+        <div className="px-3 pt-2 pb-0 shrink-0 flex flex-wrap gap-1.5">
+          {[
+            { label: "Glowing Portal", prompt: "Create a glowing neon portal with animated rings" },
+            { label: "Floating Island", prompt: "Build a floating island with crystals and waterfalls" },
+            { label: "Neon Sign", prompt: "Make a cyberpunk neon sign that says OTHERSIDE" },
+            { label: "Treasure Chest", prompt: "Build an animated treasure chest with gold glow" },
+            { label: "Koda Shrine", prompt: "Create a mystical Koda shrine with candles and runes" },
+            { label: "Obstacle Course", prompt: "Design a colorful obstacle course with ramps and tunnels" },
+          ].map(({ label, prompt: p }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => { setPrompt(p); }}
+              className="px-2.5 py-1.5 text-[10px] font-display-light tracking-[0.08em] rounded-full border border-[var(--primary)]/20 bg-[var(--primary)]/5 text-[var(--primary-light)] hover:bg-[var(--primary)]/15 hover:border-[var(--primary)]/40 transition-all"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Input Bar */}
       <div className="p-3 border-t border-white/[0.06] shrink-0">
         <form onSubmit={handleSubmit} className="relative flex items-center">
@@ -696,9 +723,11 @@ export function ChatInterface({ onGenerate, isGenerating, onNewObject, userId, g
             placeholder={
               demoNeedsGlyph
                 ? "Login to start building..."
-                : canSubmit
-                  ? (chatHistory.length > 0 ? "Refine this object..." : "Create a glowing portal...")
-                  : "Configure API settings first!"
+                : demoGenerationsExhausted
+                  ? "Demo limit reached — configure your own API key"
+                  : canSubmit
+                    ? (chatHistory.length > 0 ? "Refine this object..." : "Create a glowing portal...")
+                    : "Configure API settings first!"
             }
             disabled={isGenerating || !canSubmit}
             className={`w-full bg-black/40 border border-[var(--panel-border)] focus:border-[var(--primary)]/40 rounded-full py-3 pl-12 pr-14 text-sm text-white focus:outline-none transition-all placeholder:text-[var(--text-muted)] ${!canSubmit ? "opacity-50 cursor-not-allowed" : ""}`}

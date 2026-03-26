@@ -88,7 +88,10 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
   }, []);
 
   useEffect(() => {
-    if (!isOpen) {
+    // On mobile, chat is always "open" when rendered (no collapsed state).
+    // On desktop, only fetch when explicitly opened.
+    const shouldFetch = isOpen || isMobile;
+    if (!shouldFetch) {
       if (pollRef.current) clearInterval(pollRef.current);
       return;
     }
@@ -99,7 +102,7 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [isOpen, world, fetchChat]);
+  }, [isOpen, isMobile, world, fetchChat]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
