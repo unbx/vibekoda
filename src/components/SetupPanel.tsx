@@ -146,7 +146,7 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
                         className="w-full btn-otherside-outline flex items-center justify-center gap-2 px-3 py-2 text-[10px] tracking-[0.12em] rounded-xl"
                       >
                         <Wallet className="w-3 h-3" />
-                        CONNECT WALLET
+                        CONNECT GLYPH
                         <ArrowRight className="w-3 h-3" />
                       </button>
                     )}
@@ -169,7 +169,7 @@ export function SetupPanel({ glyphConnected, glyphUsername, walletAddress, onCon
                           {isDemo ? "Demo Mode (Claude Sonnet)" : `${providerLabel}: ${aiSettings?.model}`}
                         </p>
                         {isDemo ? (
-                          <p className="text-[10px] text-green-400/60 font-mono mt-0.5">5 free builds · Wallet required</p>
+                          <p className="text-[10px] text-green-400/60 font-mono mt-0.5">5 free builds · Glyph required</p>
                         ) : (
                           <div className="flex items-center gap-1 mt-0.5">
                             <p className="text-[10px] text-green-400/60 font-mono truncate">

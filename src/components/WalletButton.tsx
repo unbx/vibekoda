@@ -1,63 +1,57 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { injected } from "wagmi/connectors";
-import { useGlyph } from "@use-glyph/sdk-react";
-import { Wallet, LogOut, Loader2, AlertTriangle, RotateCcw, UserCheck } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useAccount } from "wagmi";
+import { useNativeGlyphConnection, useGlyph } from "@use-glyph/sdk-react";
+import { Wallet, LogOut, Loader2, AlertTriangle, RotateCcw } from "lucide-react";
 
 export function WalletButton({ onExposeActions, displayName }: { onExposeActions?: (actions: { connect: () => void; disconnect: () => void }) => void; displayName?: string | null } = {}) {
   const { address, isConnected, isConnecting } = useAccount();
-  const { connectAsync, connectors } = useConnect();
-  const { disconnectAsync } = useDisconnect();
-  const { login, authenticated } = useGlyph();
+  const { connect: glyphConnect, disconnect: glyphDisconnect } = useNativeGlyphConnection();
+  const { authenticated } = useGlyph();
   const [error, setError] = useState<string | null>(null);
   const [failCount, setFailCount] = useState(0);
   const [connecting, setConnecting] = useState(false);
-  const [signingIn, setSigningIn] = useState(false);
 
   const shortAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null;
 
-  const handleConnect = useCallback(async () => {
+  const handleConnect = useCallback(() => {
     setError(null);
     setConnecting(true);
     try {
-      // Try to find an injected connector (MetaMask, Brave Wallet, etc.)
-      // Fall back to the first available connector
-      const connector = connectors.find((c) => c.type === "injected") || connectors[0];
-      if (!connector) {
-        setError("No wallet found. Install MetaMask or another wallet extension.");
-        setConnecting(false);
-        setFailCount((c) => c + 1);
-        return;
-      }
-      await connectAsync({ connector });
-      setFailCount(0);
+      // Opens a single Glyph popup that handles wallet + auth together
+      glyphConnect();
     } catch (err: any) {
-      const msg = err?.message?.toLowerCase() || "";
-      if (msg.includes("rejected") || msg.includes("denied") || msg.includes("cancelled")) {
-        // User rejected — not really an error
-      } else if (msg.includes("no provider") || msg.includes("not found")) {
-        setError("No wallet found. Install MetaMask or another wallet extension.");
-      } else {
-        setError("Connection failed. Please try again.");
-      }
-      console.warn("[Wallet] Connect error:", err);
+      setError("Connection failed. Please try again.");
+      console.warn("[Glyph] Connect error:", err);
       setFailCount((c) => c + 1);
-    } finally {
-      setConnecting(false);
     }
-  }, [connectAsync, connectors]);
+  }, [glyphConnect]);
 
-  const handleDisconnect = useCallback(async () => {
+  // Clear connecting state when wallet connects or auth completes
+  useEffect(() => {
+    if (isConnected || authenticated) {
+      setConnecting(false);
+      setFailCount(0);
+    }
+  }, [isConnected, authenticated]);
+
+  // Also clear connecting after a timeout (in case popup was closed without completing)
+  useEffect(() => {
+    if (!connecting) return;
+    const timer = setTimeout(() => setConnecting(false), 30000);
+    return () => clearTimeout(timer);
+  }, [connecting]);
+
+  const handleDisconnect = useCallback(() => {
     try {
-      await disconnectAsync();
+      glyphDisconnect();
     } catch {
       // ignore
     }
     setError(null);
     setFailCount(0);
-  }, [disconnectAsync]);
+  }, [glyphDisconnect]);
 
   // Expose connect/disconnect to parent
   useEffect(() => {
@@ -66,45 +60,13 @@ export function WalletButton({ onExposeActions, displayName }: { onExposeActions
     }
   }, [onExposeActions, handleConnect, handleDisconnect]);
 
-  const handleGlyphSignIn = useCallback(() => {
-    setSigningIn(true);
-    try {
-      login();
-    } catch {
-      // ignore — popup may still open
-    }
-    // Reset after a delay (Privy popup is async)
-    setTimeout(() => setSigningIn(false), 3000);
-  }, [login]);
-
-  // Auto-clear signing-in state when authenticated
-  useEffect(() => {
-    if (authenticated) setSigningIn(false);
-  }, [authenticated]);
-
   if (isConnected && address) {
-    const needsGlyphSignIn = !displayName && !authenticated;
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--panel-border)] bg-[var(--primary)]/10 text-xs font-mono text-[var(--primary-light)]">
-          <span className={`w-1.5 h-1.5 rounded-full ${displayName ? "bg-green-400" : "bg-amber-400"} animate-pulse`} />
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           {displayName || shortAddr}
         </div>
-        {needsGlyphSignIn && (
-          <button
-            onClick={handleGlyphSignIn}
-            disabled={signingIn}
-            className="btn-otherside-outline flex items-center gap-1.5 px-3 py-1 text-[9px] tracking-[0.1em]"
-            title="Sign in to Glyph to show your username"
-          >
-            {signingIn ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <UserCheck className="w-3 h-3" />
-            )}
-            {signingIn ? "SIGNING IN..." : "SIGN IN TO GLYPH"}
-          </button>
-        )}
         <button
           onClick={handleDisconnect}
           className="p-1.5 hover:bg-white/5 rounded-full transition-colors text-[var(--text-muted)] hover:text-white"
@@ -128,7 +90,7 @@ export function WalletButton({ onExposeActions, displayName }: { onExposeActions
         ) : (
           <Wallet className="w-3.5 h-3.5" />
         )}
-        {connecting || isConnecting ? "CONNECTING..." : "CONNECT WALLET"}
+        {connecting || isConnecting ? "CONNECTING..." : "CONNECT GLYPH"}
       </button>
       {error && (
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-950/50 border border-amber-500/20 text-[10px] text-amber-300">
