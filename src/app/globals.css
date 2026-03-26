@@ -171,3 +171,24 @@ body {
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+
+/* ─── World Chat collapsed bar ─── */
+@keyframes world-chat-glow {
+  0%, 100% { opacity: 0; }
+  15%, 35% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes world-chat-line {
+  0%, 100% { opacity: 0.3; }
+  15%, 35% { opacity: 0.8; }
+  50% { opacity: 0.3; }
+}
+
+.animate-world-chat-glow {
+  animation: world-chat-glow 6s ease-in-out infinite;
+}
+
+.animate-world-chat-line {
+  animation: world-chat-line 6s ease-in-out infinite;
+}

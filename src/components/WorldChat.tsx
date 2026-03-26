@@ -159,16 +159,37 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
         isOpen ? "lg:w-[320px] lg:min-w-[320px] lg:max-w-[320px]" : "lg:w-12"
       } overflow-hidden flex-1 lg:flex-initial`}
     >
-      {/* Collapsed: vertical label strip (desktop only) */}
+      {/* Collapsed: vertical label strip with pink gradient pulse (desktop only) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="hidden lg:flex flex-col items-center justify-center gap-3 h-full w-full py-6 text-[var(--text-secondary)] hover:text-white bg-[var(--primary)]/5 hover:bg-[var(--primary)]/15 border-l-2 border-[var(--primary)]/40 transition-all"
+          className="hidden lg:flex flex-col items-center justify-center gap-3 h-full w-full py-6 text-[var(--text-secondary)] hover:text-white relative overflow-hidden transition-all group"
           title="Open World Chat"
         >
-          <Radio className="w-5 h-5 text-[var(--primary)] animate-pulse drop-shadow-[0_0_6px_var(--primary)]" />
-          <span className="text-[10px] font-display-light tracking-[0.2em] text-[var(--primary-light)] [writing-mode:vertical-rl] rotate-180">WORLD CHAT</span>
-          <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse shadow-[0_0_8px_var(--primary)]" />
+          {/* Pink gradient glow that pulses from the text outward */}
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            style={{
+              background: "radial-gradient(ellipse at 50% 50%, rgba(232, 75, 245, 0.12) 0%, transparent 70%)",
+            }}
+          />
+          <div
+            className="absolute inset-0 animate-world-chat-glow"
+            style={{
+              background: "linear-gradient(180deg, transparent 10%, rgba(232, 75, 245, 0.08) 40%, rgba(232, 75, 245, 0.15) 50%, rgba(232, 75, 245, 0.08) 60%, transparent 90%)",
+            }}
+          />
+          {/* Subtle side accent line with pink gradient */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-[2px] animate-world-chat-line"
+            style={{
+              background: "linear-gradient(180deg, transparent 15%, var(--accent-pink) 45%, var(--primary) 55%, transparent 85%)",
+            }}
+          />
+
+          <Radio className="w-5 h-5 text-[var(--accent-pink)] drop-shadow-[0_0_8px_rgba(232,75,245,0.5)] z-10 group-hover:scale-110 transition-transform" />
+          <span className="text-[10px] font-display-light tracking-[0.2em] text-[var(--primary-light)] [writing-mode:vertical-rl] rotate-180 z-10 group-hover:text-white transition-colors">WORLD CHAT</span>
+          <span className="w-2 h-2 rounded-full bg-[var(--accent-pink)] animate-pulse shadow-[0_0_10px_rgba(232,75,245,0.6)] z-10" />
         </button>
       )}
 
