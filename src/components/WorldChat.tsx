@@ -92,6 +92,8 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
   }, []);
   const [world, setWorld] = useState<World>("NEXUS");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // All messages from both worlds — used for analytics aggregation
+  const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,58 +102,76 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Compute analytics from messages
-  const analytics = useMemo(() => computeAnalytics(messages), [messages]);
+  // Compute analytics from ALL messages (both worlds aggregated)
+  const analytics = useMemo(() => computeAnalytics(allMessages), [allMessages]);
 
   // Notify parent of analytics updates (for dynamic suggestion chips)
   useEffect(() => {
     onAnalyticsUpdate?.(analytics);
   }, [analytics, onAnalyticsUpdate]);
 
+  // Normalize raw API response into ChatMessage[]
+  const normalizeMessages = (data: unknown): ChatMessage[] => {
+    const rawMessages: ChatMessage[] = Array.isArray(data)
+      ? data
+      : Array.isArray((data as Record<string, unknown>)?.messages)
+      ? (data as Record<string, unknown>).messages as ChatMessage[]
+      : Array.isArray((data as Record<string, unknown>)?.data)
+      ? (data as Record<string, unknown>).data as ChatMessage[]
+      : [];
+
+    return rawMessages.map((m, i) => ({
+      id: m.id || String(i),
+      username: m.username || "unknown",
+      message: m.message || "",
+      timestamp: m.timestamp,
+      isBot: m.username?.toLowerCase().includes("bot") || m.isBot,
+    })).reverse(); // oldest at top, newest at bottom
+  };
+
+  // Fetch a single world's chat
+  const fetchWorld = useCallback(async (w: World): Promise<ChatMessage[]> => {
+    try {
+      const res = await fetch(`${PROXY_URL}?world=${w}&page=1&limit=100`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return normalizeMessages(data);
+    } catch {
+      return [];
+    }
+  }, []);
+
+  // Fetch active world for display + both worlds for analytics
   const fetchChat = useCallback(async (selectedWorld: World, silent = false) => {
     if (!silent) setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `${PROXY_URL}?world=${selectedWorld}&page=1&limit=25`
-      );
+      const otherWorld: World = selectedWorld === "NEXUS" ? "SWAMP" : "NEXUS";
 
-      if (res.status === 402) {
-        setError("API requires payment (x402). Open during developer preview.");
-        return;
+      // Fetch both worlds in parallel
+      const [activeMessages, otherMessages] = await Promise.all([
+        fetchWorld(selectedWorld),
+        fetchWorld(otherWorld),
+      ]);
+
+      if (activeMessages.length === 0 && !silent) {
+        // Could be a 402 or empty — check directly for better error
+        const check = await fetch(`${PROXY_URL}?world=${selectedWorld}&page=1&limit=1`);
+        if (check.status === 402) {
+          setError("API requires payment (x402). Open during developer preview.");
+          return;
+        }
       }
 
-      if (!res.ok) {
-        setError(`Error ${res.status}: Could not fetch world chat.`);
-        return;
-      }
-
-      const data = await res.json();
-      const rawMessages: ChatMessage[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.messages)
-        ? data.messages
-        : Array.isArray(data?.data)
-        ? data.data
-        : [];
-
-      // Reverse so oldest are at top, newest at bottom
-      const normalized = rawMessages.map((m, i) => ({
-        id: m.id || String(i),
-        username: m.username || "unknown",
-        message: m.message || "",
-        timestamp: m.timestamp,
-        isBot: m.username?.toLowerCase().includes("bot") || m.isBot,
-      }));
-
-      setMessages(normalized.reverse());
+      setMessages(activeMessages);
+      setAllMessages([...activeMessages, ...otherMessages]);
       setLastUpdated(new Date());
     } catch (err) {
       if (!silent) setError("Failed to reach the Otherside API. Check your network.");
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, []);
+  }, [fetchWorld]);
 
   useEffect(() => {
     // On mobile, chat is always "open" when rendered (no collapsed state).
