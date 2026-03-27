@@ -44,7 +44,8 @@ export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
   const [glyphUsername, setGlyphUsername] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("build");
-  const [codeCollapsed, setCodeCollapsed] = useState(false);
+  const [codeCollapsed, setCodeCollapsed] = useState(true);
+  const [hasUnsavedCode, setHasUnsavedCode] = useState(false);
   const [isLeftOpen, setIsLeftOpen] = useState(true);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("chat");
   const [glyphActions, setGlyphActions] = useState<{ connect: () => void; disconnect: () => void; verify: () => void } | null>(null);
@@ -115,6 +116,7 @@ export default function Home() {
       }
 
       setMmlCode(result.mmlCode);
+      setHasUnsavedCode(true);
       // Strip all code blocks (complete and truncated/unclosed) and bare MML tags
       const description = result.content
         .replace(/```[\s\S]*?```/g, "")         // complete fenced blocks
@@ -140,11 +142,13 @@ export default function Home() {
 
   const handleNewObject = () => {
     setMmlCode(DEMO_MML);
+    setHasUnsavedCode(false);
     setError(null);
   };
 
   const handleLoadFromGallery = (code: string) => {
     setMmlCode(code);
+    setHasUnsavedCode(false);
     setError(null);
     setLeftTab("build");
   };
@@ -306,12 +310,12 @@ export default function Home() {
                 <span className="font-mono text-[10px] text-[var(--text-muted)] opacity-60">&lt;/&gt;</span>
                 <span className="font-display-light text-[10px] tracking-[0.2em] text-[var(--primary-light)]">MML CODE</span>
               </div>
-              <CodeEditorActions code={mmlCode} userId={userId} glyphConnected={glyphConnected} onSaved={() => setLeftTab("gallery")} />
+              <CodeEditorActions code={mmlCode} userId={userId} glyphConnected={glyphConnected} onSaved={() => { setLeftTab("gallery"); setHasUnsavedCode(false); }} glowing={hasUnsavedCode} />
             </div>
             {/* Expandable code area */}
             {!codeCollapsed && (
               <div className="flex-1 min-h-0 overflow-hidden">
-                <CodeEditor code={mmlCode} onChange={setMmlCode} userId={userId} />
+                <CodeEditor code={mmlCode} onChange={(c) => { setMmlCode(c); setHasUnsavedCode(true); }} userId={userId} />
               </div>
             )}
           </div>
