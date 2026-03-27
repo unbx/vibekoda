@@ -92,8 +92,6 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
   }, []);
   const [world, setWorld] = useState<World>("NEXUS");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  // All messages from both worlds — used for analytics aggregation
-  const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,8 +100,8 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Compute analytics from ALL messages (both worlds aggregated)
-  const analytics = useMemo(() => computeAnalytics(allMessages), [allMessages]);
+  // Compute analytics from active world's messages
+  const analytics = useMemo(() => computeAnalytics(messages), [messages]);
 
   // Notify parent of analytics updates (for dynamic suggestion chips)
   useEffect(() => {
@@ -129,49 +127,32 @@ export function WorldChat({ currentMmlDescription, glyphUsername, glyphConnected
     })).reverse(); // oldest at top, newest at bottom
   };
 
-  // Fetch a single world's chat
-  const fetchWorld = useCallback(async (w: World): Promise<ChatMessage[]> => {
-    try {
-      const res = await fetch(`${PROXY_URL}?world=${w}&page=1&limit=100`);
-      if (!res.ok) return [];
-      const data = await res.json();
-      return normalizeMessages(data);
-    } catch {
-      return [];
-    }
-  }, []);
-
-  // Fetch active world for display + both worlds for analytics
+  // Fetch active world's chat (100 messages)
   const fetchChat = useCallback(async (selectedWorld: World, silent = false) => {
     if (!silent) setIsLoading(true);
     setError(null);
     try {
-      const otherWorld: World = selectedWorld === "NEXUS" ? "SWAMP" : "NEXUS";
+      const res = await fetch(`${PROXY_URL}?world=${selectedWorld}&page=1&limit=100`);
 
-      // Fetch both worlds in parallel
-      const [activeMessages, otherMessages] = await Promise.all([
-        fetchWorld(selectedWorld),
-        fetchWorld(otherWorld),
-      ]);
-
-      if (activeMessages.length === 0 && !silent) {
-        // Could be a 402 or empty — check directly for better error
-        const check = await fetch(`${PROXY_URL}?world=${selectedWorld}&page=1&limit=1`);
-        if (check.status === 402) {
-          setError("API requires payment (x402). Open during developer preview.");
-          return;
-        }
+      if (res.status === 402) {
+        setError("API requires payment (x402). Open during developer preview.");
+        return;
       }
 
-      setMessages(activeMessages);
-      setAllMessages([...activeMessages, ...otherMessages]);
+      if (!res.ok) {
+        setError(`Error ${res.status}: Could not fetch world chat.`);
+        return;
+      }
+
+      const data = await res.json();
+      setMessages(normalizeMessages(data));
       setLastUpdated(new Date());
     } catch (err) {
       if (!silent) setError("Failed to reach the Otherside API. Check your network.");
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, [fetchWorld]);
+  }, []);
 
   useEffect(() => {
     // On mobile, chat is always "open" when rendered (no collapsed state).
