@@ -246,9 +246,171 @@ export async function generateMML(
   }
 }
 
-export const DEMO_MML = `<m-group id="welcome-object">
-  <m-cube y="1" scale="1.5" color="#2d1b4e">
-    <m-attr-anim attr="ry" start="0" end="360" duration="6000" loop="true" easing="linear"></m-attr-anim>
-  </m-cube>
-  <m-light type="point" intensity="3" distance="8" y="3" color="#a855f7"></m-light>
+export const DEMO_MML = `<m-group y="0">
+  <!-- Hapa Model: levitating + slow rotation -->
+  <m-model
+    src="https://vibekoda.s3.us-west-2.amazonaws.com/glb/NANA/d2240957-8800-49c8-abd9-a1ad84948340-HAPA_Koda_3D_GLB_compressed.glb"
+    y="1"
+    scale="1"
+  >
+    <!-- Levitation bob -->
+    <m-attr-anim attr="y" start="0.8" end="1.3" duration="3000" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    <!-- Slow celestial rotation -->
+    <m-attr-anim attr="ry" start="0" end="360" duration="12000" loop="true" easing="linear"></m-attr-anim>
+  </m-model>
+  <!-- === AURA GLOW CORE === -->
+  <!-- Inner pulsing glow sphere -->
+  <m-sphere radius="0.55" color="#a855f7" opacity="0.18" y="1.1">
+    <m-attr-anim attr="opacity" start="0.10" end="0.30" duration="2000" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    <m-attr-anim attr="scale" start="0.9" end="1.15" duration="2000" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+  </m-sphere>
+  <!-- Mid aura sphere -->
+  <m-sphere radius="0.85" color="#7c3aed" opacity="0.10" y="1.1">
+    <m-attr-anim attr="opacity" start="0.06" end="0.18" duration="2800" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    <m-attr-anim attr="scale" start="0.95" end="1.1" duration="2800" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+  </m-sphere>
+  <!-- === POINT LIGHTS for aura glow === -->
+  <m-light type="point" color="#c084fc" intensity="80" distance="4" x="0" y="1.2" z="0"></m-light>
+  <m-light type="point" color="#818cf8" intensity="40" distance="3" x="0" y="0.5" z="0"></m-light>
+  <m-light type="point" color="#f0abfc" intensity="30" distance="2.5" x="0" y="1.8" z="0">
+    <m-attr-anim attr="intensity" start="20" end="60" duration="1800" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+  </m-light>
+  <!-- === ORBIT RING 1: Inner ring — 8 violet particles === -->
+  <m-group y="1.1">
+    <m-attr-anim attr="ry" start="0" end="360" duration="5000" loop="true" easing="linear"></m-attr-anim>
+    <m-sphere radius="0.07" color="#e879f9" x="1.0" y="0" z="0">
+      <m-attr-anim attr="opacity" start="0.6" end="1.0" duration="900" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.07" color="#c084fc" x="0.707" y="0" z="0.707">
+      <m-attr-anim attr="opacity" start="0.5" end="1.0" duration="1100" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.07" color="#a855f7" x="0" y="0" z="1.0">
+      <m-attr-anim attr="opacity" start="0.7" end="1.0" duration="800" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.07" color="#e879f9" x="-0.707" y="0" z="0.707">
+      <m-attr-anim attr="opacity" start="0.4" end="1.0" duration="1300" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.07" color="#c084fc" x="-1.0" y="0" z="0">
+      <m-attr-anim attr="opacity" start="0.6" end="1.0" duration="950" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.07" color="#a855f7" x="-0.707" y="0" z="-0.707">
+      <m-attr-anim attr="opacity" start="0.5" end="1.0" duration="1050" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.07" color="#e879f9" x="0" y="0" z="-1.0">
+      <m-attr-anim attr="opacity" start="0.7" end="1.0" duration="870" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.07" color="#c084fc" x="0.707" y="0" z="-0.707">
+      <m-attr-anim attr="opacity" start="0.4" end="1.0" duration="1200" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+  </m-group>
+  <!-- === ORBIT RING 2: Mid ring — 10 cyan/blue particles, tilted === -->
+  <m-group y="1.1" rx="30">
+    <m-attr-anim attr="ry" start="360" end="0" duration="7000" loop="true" easing="linear"></m-attr-anim>
+    <m-sphere radius="0.06" color="#67e8f9" x="1.4" y="0" z="0">
+      <m-attr-anim attr="opacity" start="0.5" end="1.0" duration="1100" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#38bdf8" x="1.12" y="0" z="0.84">
+      <m-attr-anim attr="opacity" start="0.6" end="1.0" duration="900" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#818cf8" x="0.43" y="0" z="1.33">
+      <m-attr-anim attr="opacity" start="0.4" end="1.0" duration="1300" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#67e8f9" x="-0.43" y="0" z="1.33">
+      <m-attr-anim attr="opacity" start="0.7" end="1.0" duration="800" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#38bdf8" x="-1.12" y="0" z="0.84">
+      <m-attr-anim attr="opacity" start="0.5" end="1.0" duration="1050" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#818cf8" x="-1.4" y="0" z="0">
+      <m-attr-anim attr="opacity" start="0.6" end="1.0" duration="950" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#67e8f9" x="-1.12" y="0" z="-0.84">
+      <m-attr-anim attr="opacity" start="0.4" end="1.0" duration="1200" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#38bdf8" x="-0.43" y="0" z="-1.33">
+      <m-attr-anim attr="opacity" start="0.7" end="1.0" duration="870" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#818cf8" x="0.43" y="0" z="-1.33">
+      <m-attr-anim attr="opacity" start="0.5" end="1.0" duration="1100" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.06" color="#67e8f9" x="1.12" y="0" z="-0.84">
+      <m-attr-anim attr="opacity" start="0.6" end="1.0" duration="1000" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+  </m-group>
+  <!-- === ORBIT RING 3: Outer ring — 12 gold/pink particles, tilted opposite === -->
+  <m-group y="1.1" rx="-50" rz="20">
+    <m-attr-anim attr="ry" start="0" end="360" duration="9500" loop="true" easing="linear"></m-attr-anim>
+    <m-sphere radius="0.05" color="#fbbf24" x="1.7" y="0" z="0">
+      <m-attr-anim attr="opacity" start="0.4" end="1.0" duration="1400" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#f472b6" x="1.47" y="0" z="0.85">
+      <m-attr-anim attr="opacity" start="0.6" end="1.0" duration="1000" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#fbbf24" x="0.85" y="0" z="1.47">
+      <m-attr-anim attr="opacity" start="0.5" end="1.0" duration="1200" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#f472b6" x="0" y="0" z="1.7">
+      <m-attr-anim attr="opacity" start="0.7" end="1.0" duration="900" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#fbbf24" x="-0.85" y="0" z="1.47">
+      <m-attr-anim attr="opacity" start="0.4" end="1.0" duration="1300" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#f472b6" x="-1.47" y="0" z="0.85">
+      <m-attr-anim attr="opacity" start="0.6" end="1.0" duration="1100" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#fbbf24" x="-1.7" y="0" z="0">
+      <m-attr-anim attr="opacity" start="0.5" end="1.0" duration="950" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#f472b6" x="-1.47" y="0" z="-0.85">
+      <m-attr-anim attr="opacity" start="0.7" end="1.0" duration="1050" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#fbbf24" x="-0.85" y="0" z="-1.47">
+      <m-attr-anim attr="opacity" start="0.4" end="1.0" duration="1250" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#f472b6" x="0" y="0" z="-1.7">
+      <m-attr-anim attr="opacity" start="0.6" end="1.0" duration="880" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#fbbf24" x="0.85" y="0" z="-1.47">
+      <m-attr-anim attr="opacity" start="0.5" end="1.0" duration="1150" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.05" color="#f472b6" x="1.47" y="0" z="-0.85">
+      <m-attr-anim attr="opacity" start="0.7" end="1.0" duration="1000" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    </m-sphere>
+  </m-group>
+  <!-- === VERTICAL DRIFT PARTICLES — rising sparks === -->
+  <m-group y="0.2">
+    <m-attr-anim attr="ry" start="0" end="360" duration="15000" loop="true" easing="linear"></m-attr-anim>
+    <m-sphere radius="0.04" color="#f0abfc" x="0.5" y="0" z="0.3">
+      <m-attr-anim attr="y" start="0" end="2.5" duration="3000" loop="true" easing="easeOutQuad"></m-attr-anim>
+      <m-attr-anim attr="opacity" start="1.0" end="0.0" duration="3000" loop="true" easing="easeOutQuad"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.035" color="#818cf8" x="-0.4" y="0.5" z="0.5">
+      <m-attr-anim attr="y" start="0.5" end="2.8" duration="3500" loop="true" easing="easeOutQuad"></m-attr-anim>
+      <m-attr-anim attr="opacity" start="1.0" end="0.0" duration="3500" loop="true" easing="easeOutQuad"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.03" color="#67e8f9" x="0.3" y="1.0" z="-0.4">
+      <m-attr-anim attr="y" start="1.0" end="3.0" duration="2800" loop="true" easing="easeOutQuad"></m-attr-anim>
+      <m-attr-anim attr="opacity" start="1.0" end="0.0" duration="2800" loop="true" easing="easeOutQuad"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.04" color="#fbbf24" x="-0.6" y="0.2" z="-0.3">
+      <m-attr-anim attr="y" start="0.2" end="2.6" duration="3200" loop="true" easing="easeOutQuad"></m-attr-anim>
+      <m-attr-anim attr="opacity" start="1.0" end="0.0" duration="3200" loop="true" easing="easeOutQuad"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.025" color="#e879f9" x="0.1" y="0.8" z="0.6">
+      <m-attr-anim attr="y" start="0.8" end="3.2" duration="4000" loop="true" easing="easeOutQuad"></m-attr-anim>
+      <m-attr-anim attr="opacity" start="1.0" end="0.0" duration="4000" loop="true" easing="easeOutQuad"></m-attr-anim>
+    </m-sphere>
+    <m-sphere radius="0.03" color="#c084fc" x="-0.2" y="0.3" z="-0.6">
+      <m-attr-anim attr="y" start="0.3" end="2.9" duration="3700" loop="true" easing="easeOutQuad"></m-attr-anim>
+      <m-attr-anim attr="opacity" start="1.0" end="0.0" duration="3700" loop="true" easing="easeOutQuad"></m-attr-anim>
+    </m-sphere>
+  </m-group>
+  <!-- Ground glow disc -->
+  <m-cylinder radius="1.2" height="0.04" color="#7c3aed" opacity="0.25" y="0.02">
+    <m-attr-anim attr="opacity" start="0.12" end="0.35" duration="2500" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+    <m-attr-anim attr="ry" start="0" end="360" duration="8000" loop="true" easing="linear"></m-attr-anim>
+  </m-cylinder>
+  <m-cylinder radius="0.7" height="0.02" color="#e879f9" opacity="0.20" y="0.03">
+    <m-attr-anim attr="opacity" start="0.10" end="0.30" duration="1800" loop="true" ping-pong="true" easing="easeInOutSine"></m-attr-anim>
+  </m-cylinder>
 </m-group>`;

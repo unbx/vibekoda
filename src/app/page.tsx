@@ -39,7 +39,7 @@ export default function Home() {
   const [mmlCode, setMmlCode] = useState<string>(DEMO_MML);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lighting, setLighting] = useState<LightingPreset>("studio");
+  const [lighting, setLighting] = useState<LightingPreset>("sunset");
   const [localUserId, setLocalUserId] = useState<string>("");
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
   const [glyphUsername, setGlyphUsername] = useState<string | null>(null);
@@ -116,6 +116,7 @@ export default function Home() {
       }
 
       setMmlCode(result.mmlCode);
+      setLighting("studio");
       setHasUnsavedCode(true);
       // Strip all code blocks (complete and truncated/unclosed) and bare MML tags
       const description = result.content
