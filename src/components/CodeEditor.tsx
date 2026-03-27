@@ -10,7 +10,7 @@ interface CodeEditorProps {
   headerSlot?: boolean; // when true, render only the action buttons (for external header)
 }
 
-export function CodeEditorActions({ code, userId, glyphConnected, onSaved }: { code: string; userId?: string; glyphConnected?: boolean; onSaved?: () => void }) {
+export function CodeEditorActions({ code, userId, glyphConnected, onSaved, glowing }: { code: string; userId?: string; glyphConnected?: boolean; onSaved?: () => void; glowing?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedToGallery, setSavedToGallery] = useState(false);
@@ -63,7 +63,7 @@ export function CodeEditorActions({ code, userId, glyphConnected, onSaved }: { c
           onClick={handleSaveToS3}
           disabled={isSaving || !code.trim()}
           title="Save to S3 and get a hosted URL"
-          className="btn-otherside-outline flex items-center gap-1.5 px-3 py-1.5 text-[10px] disabled:opacity-30"
+          className={`btn-otherside-outline flex items-center gap-1.5 px-3 py-1.5 text-[10px] disabled:opacity-30 ${glowing ? "animate-save-glow" : ""}`}
         >
           {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CloudUpload className="w-3 h-3" />}
           {isSaving ? "SAVING..." : "SAVE"}
